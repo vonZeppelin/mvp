@@ -1,0 +1,16 @@
+#appMenuButton {
+    -fx-background-color: none;
+}
+
+#appMenuButton:armed, #appMenuButton:hover {
+    -fx-background-color: -fx-shadow-highlight-color, -fx-outer-border, -fx-inner-border, -fx-body-color;
+}
+
+#trackTitle {
+    -fx-border-width: 1;
+    -fx-border-color: black;
+}
+
+.track-table-cell .text-field:invalid {
+    -fx-effect: dropshadow(three-pass-box, darkred, 7, 0, 0, 0);
+}
