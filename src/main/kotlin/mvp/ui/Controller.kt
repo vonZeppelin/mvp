@@ -4,17 +4,12 @@ import com.jfoenix.animation.alert.JFXAlertAnimation
 import com.jfoenix.controls.JFXAlert
 import com.jfoenix.controls.JFXButton
 import com.jfoenix.controls.JFXDialogLayout
-import com.jfoenix.controls.JFXTreeTableView
-import com.jfoenix.controls.RecursiveTreeItem
-import com.jfoenix.controls.datamodels.treetable.RecursiveTreeObject
 import com.sun.jna.Pointer
 import java.io.InputStream
 import java.nio.file.Paths
 import javafx.application.Platform
 import javafx.beans.binding.Bindings
-import javafx.collections.FXCollections.observableList
 import javafx.event.ActionEvent
-import javafx.event.EventHandler
 import javafx.fxml.FXML
 import javafx.geometry.Insets
 import javafx.geometry.Point2D
@@ -25,7 +20,7 @@ import javafx.scene.control.ContextMenu
 import javafx.scene.control.Label
 import javafx.scene.control.TreeItem
 import javafx.scene.control.TreeTableColumn
-import javafx.scene.input.KeyCode
+import javafx.scene.control.TreeTableView
 import javafx.scene.layout.Region
 import javafx.scene.shape.Polygon
 import javafx.scene.shape.Rectangle
@@ -46,14 +41,12 @@ import mvp.nativelibs.msgSend
 const val ARROW_HEIGHT = 10.0
 @JvmField val ROOT_PADDING: Insets = Insets(ARROW_HEIGHT * 2, ARROW_HEIGHT, ARROW_HEIGHT, ARROW_HEIGHT)
 
-class PlaylistItem(val track: Track) : RecursiveTreeObject<PlaylistItem>()
-
 class Controller(private val stage: Stage) {
     @FXML private lateinit var appMenu: ContextMenu
     @FXML private lateinit var showAuxIcons: CheckMenuItem
-    @FXML private lateinit var playlist: JFXTreeTableView<PlaylistItem>
-    @FXML private lateinit var statusCol: TreeTableColumn<PlaylistItem, Player.Status>
-    @FXML private lateinit var trackCol: TreeTableColumn<PlaylistItem, String>
+    @FXML private lateinit var playlist: TreeTableView<Track>
+    @FXML private lateinit var statusCol: TreeTableColumn<Track, Player.Status>
+    @FXML private lateinit var trackCol: TreeTableColumn<Track, String>
 
     private val statusBar: StatusBar = StatusBar { (id, location, isRightButton) ->
         when {
@@ -91,7 +84,7 @@ class Controller(private val stage: Stage) {
     }
 
     @FXML fun addTrack() {
-        playlist.root.children += TreeItem(PlaylistItem(Track("New track", "")))
+        playlist.root.children += TreeItem(Track("New track", ""))
         playlist.refresh()
     }
 
@@ -101,7 +94,7 @@ class Controller(private val stage: Stage) {
     }
 
     @FXML fun exitApp() {
-        writeM3U(playlist.root.children.map { it.value.track }, mvpPlaylist)
+        writeM3U(playlist.root.children.map { it.value }, mvpPlaylist)
         statusBar.destroy()
         Platform.exit()
     }
@@ -121,21 +114,16 @@ class Controller(private val stage: Stage) {
     }
 
     @FXML fun initialize() {
-        playlist.onKeyReleased = EventHandler { event ->
-            if (event.code == KeyCode.DELETE) {
-                deleteTrack()
-            }
-        }
         playlist.root = playlistRoot(
             if (mvpPlaylist.exists()) readM3U(mvpPlaylist) else emptyList()
         )
         statusCol.cellValueFactory = Callback {
-            Bindings.`when`(Bindings.equal(it.value.value.track, Player.trackProperty))
+            Bindings.`when`(Bindings.equal(it.value.value, Player.trackProperty))
                 .then(Player.statusProperty)
                 .otherwise(null as Player.Status?)
         }
         trackCol.cellFactory = Callback { TrackCell() }
-        trackCol.cellValueFactory = Callback { it.value.value.track.nameProperty }
+        trackCol.cellValueFactory = Callback { it.value.value.nameProperty }
 
         showAuxIcons.selectedProperty().addListener { _, _, newValue ->
             hideTrayIcons()
@@ -144,17 +132,14 @@ class Controller(private val stage: Stage) {
         showTrayIcons()
     }
 
-    private fun deleteTrack() {
-        playlist.root.children -= playlist.selectionModel.selectedItem
-        playlist.refresh()
-    }
-
     private fun toggleTrack() {
         if (Player.status == Player.Status.PLAYING) {
             Player.stop()
         } else {
             (playlist.selectionModel.selectedItem ?: playlist.root.children.firstOrNull())
-                ?.let { Player.play(it.value.track) }
+                ?.let {
+                    Player.play(it.value)
+                }
         }
     }
 
@@ -214,11 +199,10 @@ class Controller(private val stage: Stage) {
     }
 }
 
-private fun playlistRoot(tracks: List<Track>): TreeItem<PlaylistItem> =
-    RecursiveTreeItem(
-        observableList(tracks.map(::PlaylistItem)),
-        RecursiveTreeObject<PlaylistItem>::getChildren
-    )
+private fun playlistRoot(tracks: List<Track>): TreeItem<Track> =
+    TreeItem<Track>().apply {
+        children += tracks.map(::TreeItem)
+    }
 
 private fun loadIcon(iconPath: String): ByteArray =
     Controller::class.java.getResourceAsStream(iconPath).use(InputStream::readBytes)

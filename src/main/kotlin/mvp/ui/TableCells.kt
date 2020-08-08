@@ -1,5 +1,6 @@
 package mvp.ui
 
+import com.jfoenix.controls.JFXButton
 import com.jfoenix.controls.JFXTextField
 import com.jfoenix.controls.cells.editors.base.EditorNodeBuilder
 import com.jfoenix.controls.cells.editors.base.GenericEditableTreeTableCell
@@ -9,18 +10,25 @@ import java.net.URI
 import javafx.application.Platform.runLater
 import javafx.beans.value.ChangeListener
 import javafx.event.EventHandler
+import javafx.geometry.Pos
+import javafx.scene.control.Label
 import javafx.scene.control.TextInputControl
+import javafx.scene.image.Image
+import javafx.scene.image.ImageView
 import javafx.scene.input.KeyEvent
+import javafx.scene.layout.HBox
+import javafx.scene.layout.Priority
 import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
+import mvp.audio.Track
 
-class TrackCell : GenericEditableTreeTableCell<PlaylistItem, String>(null) {
-    private inner class TrackEditorBuilder : EditorNodeBuilder<String> {
+class TrackCell : GenericEditableTreeTableCell<Track, String>(null) {
+    private inner class TrackEditorBuilder : EditorNodeBuilder<Any> {
         private var nameField: JFXTextField? = null
         private var urlField: JFXTextField? = null
 
         override fun createNode(
-            value: String,
+            value: Any,
             keyEventsHandler: EventHandler<KeyEvent>,
             focusChangeListener: ChangeListener<Boolean>
         ): Region {
@@ -47,8 +55,8 @@ class TrackCell : GenericEditableTreeTableCell<PlaylistItem, String>(null) {
             }
         }
 
-        override fun setValue(value: String) {
-            with(treeTableRow.item.track) {
+        override fun setValue(value: Any) {
+            with(treeTableRow.item) {
                 nameField?.text = name
                 urlField?.text = url.toASCIIString()
             }
@@ -58,7 +66,7 @@ class TrackCell : GenericEditableTreeTableCell<PlaylistItem, String>(null) {
             if (listOfNotNull(nameField, urlField).all(JFXTextField::validate)) {
                 // track's name and URL are updated after a successful validation
                 // as a workaround to edit multiple values via EditorNodeBuilder
-                with(treeTableRow.item.track) {
+                with(treeTableRow.item) {
                     name = nameField!!.text
                     url = URI(urlField!!.text)
                 }
@@ -68,7 +76,7 @@ class TrackCell : GenericEditableTreeTableCell<PlaylistItem, String>(null) {
         }
 
         override fun cancelEdit() {
-            // nothing to do
+            treeTableView.refresh()
         }
 
         override fun startEdit() {
@@ -79,14 +87,14 @@ class TrackCell : GenericEditableTreeTableCell<PlaylistItem, String>(null) {
             }
         }
 
-        override fun getValue(): String? = nameField?.text
+        override fun getValue(): Any? = nameField?.text
 
         override fun nullEditorNode() {
             nameField = null
             urlField = null
         }
 
-        override fun updateItem(item: String?, empty: Boolean) {
+        override fun updateItem(item: Any?, empty: Boolean) {
             startEdit()
         }
     }
@@ -95,7 +103,25 @@ class TrackCell : GenericEditableTreeTableCell<PlaylistItem, String>(null) {
         builder = TrackEditorBuilder()
     }
 
+    override fun getValue(): Any {
+        val deleteButton = JFXButton(null, ImageView(deleteIcon)).apply {
+            isDisableVisualFocus = true
+            onAction = EventHandler {
+                treeTableView.root.children -= treeTableRow.treeItem
+                treeTableView.refresh()
+            }
+            visibleProperty().bind(treeTableRow.selectedProperty())
+        }
+        val spacer = Region().apply {
+            HBox.setHgrow(this, Priority.ALWAYS)
+        }
+        return HBox(Label(item), spacer, deleteButton).apply {
+            alignment = Pos.CENTER
+        }
+    }
+
     private companion object {
+        val deleteIcon = Image("/delete.png", 16.0, 16.0, true, false)
         val requiredFieldValidator = RequiredFieldValidator("Required field")
         val urlFieldValidator = object : ValidatorBase("Invalid URL") {
             override fun eval() {
