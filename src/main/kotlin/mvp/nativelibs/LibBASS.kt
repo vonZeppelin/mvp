@@ -4,85 +4,55 @@ import com.sun.jna.Callback
 import com.sun.jna.Native
 import com.sun.jna.Pointer
 import com.sun.jna.Structure
-import mvp.Track
 
-import javafx.collections.FXCollections
-import javafx.collections.ObservableSet
-import java.util.concurrent.CompletableFuture
+interface SYNCPROC : Callback {
+    fun callback(handle: Pointer, channel: Pointer, data: Int, userData: Pointer?)
+}
 
-interface Player {
-    val track: Track
-
-    fun play()
-
-    fun stop()
+@Structure.FieldOrder("name", "driver", "flags")
+class DeviceInfo : Structure() {
+    @JvmField var name: String = ""
+    @JvmField var driver: String = ""
+    @JvmField var flags: Int = 0
 }
 
 object LibBASS {
+    @JvmStatic external fun BASS_ChannelGetTags(handle: Pointer, tags: Int): String
+    @JvmStatic external fun BASS_ChannelPlay(handle: Pointer, restart: Boolean): Boolean
+    @JvmStatic external fun BASS_ChannelSetSync(handle: Pointer, type: Int, param: Long, proc: SYNCPROC, userData: Pointer = NULL_PTR): Pointer
+    @JvmStatic external fun BASS_ErrorGetCode(): Int
+    @JvmStatic external fun BASS_Free()
+    @JvmStatic external fun BASS_GetDeviceInfo(device: Int, info: DeviceInfo): Boolean
+    @JvmStatic external fun BASS_Init(device: Int, freq: Int, flags: Int, win: Pointer = NULL_PTR, clsid: Pointer = NULL_PTR): Boolean
+    @JvmStatic external fun BASS_PluginLoad(file: String, flags: Int): Int
+    @JvmStatic external fun BASS_SetConfig(option: Int, value: Int): Boolean
+    @JvmStatic external fun BASS_StreamCreateURL(url: String, offset: Int, flags: Int, proc: Callback? = null, userData: Pointer = NULL_PTR): Pointer
+    @JvmStatic external fun BASS_StreamFree(stream: Pointer): Boolean
+
+    const val BASS_CONFIG_DEV_DEFAULT = 36
+    const val BASS_CONFIG_NET_PREBUF_WAIT = 60
+    const val BASS_DEVICE_ENABLED = 1
+    const val BASS_STREAM_AUTOFREE = 0x40000
+    const val BASS_STREAM_BLOCK = 0x100000
+    const val BASS_STREAM_STATUS = 0x800000
+    const val BASS_SYNC_HLS_SEGMENT = 0x10300
+    const val BASS_SYNC_META = 4
+    const val BASS_SYNC_STALL = 6
+    const val BASS_SYNC_OGG_CHANGE = 12
+
     init {
         Native.register("bass")
 
-        BASS_Init(-1, 48000, 0)
+        check(BASS_Init(-1, 48000, 0)) {
+            "Couldn't init BASS lib, error code ${BASS_ErrorGetCode()}"
+        }
+        BASS_SetConfig(BASS_CONFIG_NET_PREBUF_WAIT, 0)
 
         listOf("bassflac", "basshls", "bassopus").forEach { plugin ->
-            Native.extractFromResourcePath(plugin).run {
-                check(BASS_PluginLoad(absolutePath, 0) != 0) {
-                    "Couldn't load '$plugin' plugin"
-                }
+            val pluginFile = Native.extractFromResourcePath(plugin)
+            check(BASS_PluginLoad(pluginFile.absolutePath, 0) != 0) {
+                "Couldn't load '$plugin' plugin"
             }
         }
     }
-
-    fun listDevices(): ObservableSet<Device> = FXCollections.emptyObservableSet()
-
-    fun createPlayer(track: Track): Player =
-        object : Player {
-            override val track: Track = track
-
-            private val stream: CompletableFuture<Pointer> = CompletableFuture.supplyAsync {
-                BASS_StreamCreateURL(track.url.toASCIIString(), 0, 0).apply {
-                    check(Pointer.nativeValue(this) != 0L) {
-                        "Couldn't create stream from ${track.url}, error code ${BASS_ErrorGetCode()}"
-                    }
-                }
-            }
-
-            override fun play() {
-                stream.thenAccept {
-                    check(BASS_ChannelPlay(it, true)) {
-                        "Couldn't play channel, error code ${BASS_ErrorGetCode()}"
-                    }
-                }
-            }
-
-            override fun stop() {
-                stream.thenAccept {
-                    check(BASS_ChannelStop(it)) {
-                        "Couldn't stop channel, error code ${BASS_ErrorGetCode()}"
-                    }
-                    check(BASS_StreamFree(it)) {
-                        "Couldn't free channel, error code ${BASS_ErrorGetCode()}"
-                    }
-                }
-            }
-        }
-
-    data class Device(val name: String, val flags: Int)
-
-    @Structure.FieldOrder("name", "driver", "flags")
-    class DeviceInfo(
-        @JvmField var name: String,
-        @JvmField var driver: String,
-        @JvmField var flags: Int
-    ) : Structure()
-
-    @JvmStatic private external fun BASS_GetDeviceInfo(device: Int, info: DeviceInfo): Boolean
-    @JvmStatic private external fun BASS_ErrorGetCode(): Int
-    @JvmStatic private external fun BASS_Free()
-    @JvmStatic private external fun BASS_Init(device: Int, freq: Int, flags: Int, win: Long = 0, clsid: Pointer? = Pointer.NULL): Boolean
-    @JvmStatic private external fun BASS_PluginLoad(file: String, flags: Int): Int
-    @JvmStatic private external fun BASS_ChannelPlay(handle: Pointer, restart: Boolean): Boolean
-    @JvmStatic private external fun BASS_ChannelStop(handle: Pointer): Boolean
-    @JvmStatic private external fun BASS_StreamCreateURL(url: String, offset: Int, flags: Int, proc: Callback? = null, user: Pointer? = Pointer.NULL): Pointer
-    @JvmStatic private external fun BASS_StreamFree(stream: Pointer): Boolean
 }

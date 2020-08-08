@@ -1,6 +1,6 @@
 project("MVP") {
 
-    id("org.lbogdanov.mvp:mvp:0.1:jar")
+    id("org.lbogdanov.mvp:mvp:0.1")
 
     properties {
         "kotlin.compiler.incremental" to true
@@ -9,15 +9,15 @@ project("MVP") {
 
     val mainClass = "mvp.AppKt"
 
-    val javafxVersion = "14.0.1"
+    val javafxVersion = "14.0.2"
     val kotlinVersion = "1.3.72"
 
     dependencies {
+        compile("com.jfoenix:jfoenix:9.0.10")
+        compile("net.java.dev.jna:jna:5.6.0")
+        compile("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
         compile("org.openjfx:javafx-controls:$javafxVersion")
         compile("org.openjfx:javafx-fxml:$javafxVersion")
-        compile("net.java.dev.jna:jna:5.5.0")
-        compile("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
-        compile("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion")
     }
 
     build {
@@ -33,6 +33,7 @@ project("MVP") {
                         }
                     }
                 }
+                execution(phase = "package", goals = listOf("single"))
             }
             plugin("org.jetbrains.kotlin:kotlin-maven-plugin:$kotlinVersion") {
                 configuration {

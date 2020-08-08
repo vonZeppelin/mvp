@@ -1,133 +1,227 @@
 package mvp.ui
 
+import com.jfoenix.animation.alert.JFXAlertAnimation
+import com.jfoenix.controls.JFXAlert
+import com.jfoenix.controls.JFXButton
+import com.jfoenix.controls.JFXDialogLayout
+import com.jfoenix.controls.JFXTreeTableView
+import com.jfoenix.controls.RecursiveTreeItem
+import com.jfoenix.controls.datamodels.treetable.RecursiveTreeObject
+import com.sun.jna.Pointer
+import java.io.InputStream
+import java.nio.file.Paths
+import javafx.application.Platform
 import javafx.beans.binding.Bindings
-import javafx.beans.property.ReadOnlyObjectWrapper
-import javafx.beans.property.SimpleObjectProperty
-import javafx.collections.FXCollections
-import javafx.collections.ListChangeListener.Change as ListChange
+import javafx.collections.FXCollections.observableList
 import javafx.event.ActionEvent
+import javafx.event.EventHandler
 import javafx.fxml.FXML
+import javafx.geometry.Insets
+import javafx.geometry.Point2D
 import javafx.geometry.Side
 import javafx.scene.Node
-import javafx.scene.control.Alert
-import javafx.scene.control.Alert.AlertType
-import javafx.scene.control.ButtonType
 import javafx.scene.control.CheckMenuItem
 import javafx.scene.control.ContextMenu
-import javafx.scene.control.TableColumn
-import javafx.scene.control.TableView
+import javafx.scene.control.Label
+import javafx.scene.control.TreeItem
+import javafx.scene.control.TreeTableColumn
+import javafx.scene.input.KeyCode
+import javafx.scene.layout.Region
+import javafx.scene.shape.Polygon
+import javafx.scene.shape.Rectangle
+import javafx.scene.shape.Shape
+import javafx.scene.text.Text
 import javafx.stage.FileChooser
+import javafx.stage.Screen
+import javafx.stage.Stage
 import javafx.util.Callback
-import java.net.URI
-import java.nio.file.Paths
+import mvp.audio.Player
+import mvp.audio.Track
+import mvp.audio.readM3U
+import mvp.audio.writeM3U
+import mvp.nativelibs.NSApp
+import mvp.nativelibs.javaString
+import mvp.nativelibs.msgSend
 
-import mvp.App
-import mvp.Track
-import mvp.nativelibs.LibBASS
-import mvp.nativelibs.Player
-import mvp.nativelibs.StatusBar
-import mvp.readM3U
-import mvp.writeM3U
-import java.util.concurrent.Callable
-import kotlin.system.exitProcess
+const val ARROW_HEIGHT = 10.0
+@JvmField val ROOT_PADDING: Insets = Insets(ARROW_HEIGHT * 2, ARROW_HEIGHT, ARROW_HEIGHT, ARROW_HEIGHT)
 
-class Controller(private val app: App) {
+class PlaylistItem(val track: Track) : RecursiveTreeObject<PlaylistItem>()
+
+class Controller(private val stage: Stage) {
     @FXML private lateinit var appMenu: ContextMenu
-    @FXML private lateinit var trackMenu: ContextMenu
     @FXML private lateinit var showAuxIcons: CheckMenuItem
-    @FXML private lateinit var playlist: TableView<Track>
+    @FXML private lateinit var playlist: JFXTreeTableView<PlaylistItem>
+    @FXML private lateinit var statusCol: TreeTableColumn<PlaylistItem, Player.Status>
+    @FXML private lateinit var trackCol: TreeTableColumn<PlaylistItem, String>
 
-    private val status = SimpleObjectProperty<Pair<Track, Status>>(this, "status", null).apply {
-        var player: Player? = null
-        addListener {_, _, (track, status) ->
-            when (status) {
-                Status.PLAYING ->
-                    if (player?.track == track) {
-                        player?.play()
-                    } else {
-                        player?.stop()
-                        player = LibBASS.createPlayer(track).apply { play() }
-                    }
-                Status.STOPPED -> player?.stop()
-            }
+    private val statusBar: StatusBar = StatusBar { (id, location, isRightButton) ->
+        when {
+            isRightButton -> if (stage.isShowing) stage.hide() else showUI(location)
+            id == "play" -> toggleTrack()
+            Player.status != Player.Status.PLAYING -> return@StatusBar
         }
+    }
+    private val isDarkTheme: Boolean by lazy {
+        NSApp.msgSend<Pointer>("effectiveAppearance")
+            .msgSend<Pointer>("name")
+            .javaString()
+            .contains("dark", ignoreCase = true)
     }
 
     @FXML fun aboutApp() {
-        Alert(AlertType.INFORMATION, aboutApp, ButtonType.CLOSE)
-            .apply {
-                headerText = null
-                title = "About MVP"
-            }
-            .showAndWait()
+        keepStageVisible {
+            JFXAlert<Unit>()
+                .apply {
+                    animation = JFXAlertAnimation.NO_ANIMATION
+                    setContent(
+                        JFXDialogLayout().apply {
+                            setHeading(Label("About MVP"))
+                            setBody(Text(aboutApp))
+                            setActions(
+                                JFXButton("Close").apply {
+                                    setOnAction { close() }
+                                }
+                            )
+                        }
+                    )
+                }
+                .showAndWait()
+        }
     }
 
     @FXML fun addTrack() {
-        playlist.items.add(Track("New track", URI.create("")))
+        playlist.root.children += TreeItem(PlaylistItem(Track("New track", "")))
+        playlist.refresh()
     }
 
-    @FXML fun deleteTrack() {
-        playlist.items.remove(playlist.selectionModel.selectedItem)
-    }
-
-    @Suppress("UNCHECKED_CAST")
     @FXML fun editTrack() {
-        with(playlist) {
-            val selectedCell = selectionModel.selectedCells.single()
-            edit(selectedCell.row, selectedCell.tableColumn as TableColumn<Track, *>?)
-        }
-    }
-
-    @FXML fun playTrack() {
-        status.set(playlist.selectionModel.selectedItem to Status.PLAYING)
-    }
-
-    @FXML fun toggleTrack() {
-        TODO()
+        val selectedCell = playlist.selectionModel.selectedCells.single()
+        playlist.edit(selectedCell.row, selectedCell.tableColumn)
     }
 
     @FXML fun exitApp() {
-        StatusBar.stop()
-        exitProcess(0)
+        writeM3U(playlist.root.children.map { it.value.track }, mvpPlaylist)
+        statusBar.destroy()
+        Platform.exit()
     }
 
-    @FXML fun importPlaylist() {
-        val playlists = FileChooser()
-            .apply { extensionFilters += FileChooser.ExtensionFilter("Playlists", "*.m3u", "*.m3u8") }
-            .showOpenMultipleDialog(app.primaryStage)
-            ?: emptyList()
-        playlist.items.addAll(playlists.flatMap(::readM3U))
-    }
-
-    @FXML fun showAppMenu(evt: ActionEvent): Unit = appMenu.show(evt.source as Node, Side.LEFT, 0.0, 0.0)
-
-    @FXML private fun initialize() {
-        app.uiManager.showAuxIcons.bind(showAuxIcons.selectedProperty())
-
-        val mvpPlaylist = Paths.get(System.getProperty("user.home"), "mvp.m3u8").toFile()
-        val tracks = if (mvpPlaylist.exists()) readM3U(mvpPlaylist) else arrayListOf()
-        playlist.items = FXCollections.observableList(tracks) { arrayOf(it.nameProperty, it.urlProperty) }.apply {
-            addListener { change: ListChange<out Track> -> writeM3U(change.list, mvpPlaylist) }
+    @FXML fun openPlaylist() {
+        keepStageVisible {
+            FileChooser()
+                .apply { extensionFilters += FileChooser.ExtensionFilter("Playlists", "*.m3u", "*.m3u8") }
+                .showOpenMultipleDialog(stage)
+                ?.flatMap(::readM3U)
+                ?.let { playlist.root = playlistRoot(it) }
         }
+    }
 
-        val (statusCol, trackCol) = playlist.columns
-        statusCol.cellValueFactory = Callback { cell ->
-            Bindings.createObjectBinding(
-                Callable {
-                    val status = status.value
-                    when {
-                        status == null -> null
-                        status.first == cell.value-> status.second
-                        else -> null
-                    }
-                },
-                status
+    @FXML fun showAppMenu(evt: ActionEvent) {
+        appMenu.show(evt.source as Node, Side.LEFT, 0.0, 0.0)
+    }
+
+    @FXML fun initialize() {
+        playlist.onKeyReleased = EventHandler { event ->
+            if (event.code == KeyCode.DELETE) {
+                deleteTrack()
+            }
+        }
+        playlist.root = playlistRoot(
+            if (mvpPlaylist.exists()) readM3U(mvpPlaylist) else emptyList()
+        )
+        statusCol.cellValueFactory = Callback {
+            Bindings.`when`(Bindings.equal(it.value.value.track, Player.trackProperty))
+                .then(Player.statusProperty)
+                .otherwise(null as Player.Status?)
+        }
+        trackCol.cellFactory = Callback { TrackCell() }
+        trackCol.cellValueFactory = Callback { it.value.value.track.nameProperty }
+
+        showAuxIcons.selectedProperty().addListener { _, _, newValue ->
+            hideTrayIcons()
+            showTrayIcons(newValue)
+        }
+        showTrayIcons()
+    }
+
+    private fun deleteTrack() {
+        playlist.root.children -= playlist.selectionModel.selectedItem
+        playlist.refresh()
+    }
+
+    private fun toggleTrack() {
+        if (Player.status == Player.Status.PLAYING) {
+            Player.stop()
+        } else {
+            (playlist.selectionModel.selectedItem ?: playlist.root.children.firstOrNull())
+                ?.let { Player.play(it.value.track) }
+        }
+    }
+
+    private fun showTrayIcons(showAuxIcons: Boolean = false) {
+        if (showAuxIcons) {
+            statusBar.addIcon("next", loadIcon("/next.png"))
+        }
+        statusBar.addIcon("play", loadIcon("/play.png"))
+        if (showAuxIcons) {
+            statusBar.addIcon("previous", loadIcon("/previous.png"))
+        }
+    }
+
+    private fun hideTrayIcons() {
+        listOf("previous", "play", "next").forEach(statusBar::removeIcon)
+    }
+
+    /**
+     * A hack to prevent the primary [Stage] from being hidden when it loses focus when a dialog is displayed.
+     */
+    private fun keepStageVisible(block: () -> Unit) {
+        try {
+            stage.userData = ""
+            block()
+        } finally {
+            stage.userData = null
+        }
+    }
+
+    // TODO Proper positioning, East-West support?
+    private fun showUI(click: Point2D) {
+        val scene = if (stage.isShowing) return else stage.scene
+
+        val screenBounds = Screen.getScreensForRectangle(click.x, click.y, 1.0, 1.0)
+            .single()
+            .visualBounds
+        val arrowheadX = click.x.coerceIn(screenBounds.minX, screenBounds.maxX)
+        val arrowheadY = click.y.coerceIn(screenBounds.minY, screenBounds.maxY)
+
+        stage.x = arrowheadX - scene.width / 2
+        stage.y = arrowheadY
+
+        (scene.root as Region).shape = Shape.union(
+            Rectangle(ARROW_HEIGHT, ARROW_HEIGHT, scene.width - ARROW_HEIGHT * 2, scene.height - ARROW_HEIGHT * 2).apply {
+                arcWidth = 10.0
+                arcHeight = 10.0
+            },
+            Polygon(
+                scene.width / 2 - ARROW_HEIGHT, ARROW_HEIGHT,
+                scene.width / 2, 0.0,
+                scene.width / 2 + ARROW_HEIGHT, ARROW_HEIGHT
             )
-        }
-        statusCol.cellFactory = Callback { StatusCell(status) }
-        trackCol.cellValueFactory = Callback { cell -> ReadOnlyObjectWrapper(cell.value) }
-        trackCol.cellFactory = Callback { TrackTableCell(trackMenu) }
+        )
+
+        stage.show()
+        stage.toFront()
     }
 }
 
-private const val aboutApp = "Minimal Viable Player - lives in system tray and plays streaming audio.\n\n\u00a9 2019, Leonid Bogdanov"
+private fun playlistRoot(tracks: List<Track>): TreeItem<PlaylistItem> =
+    RecursiveTreeItem(
+        observableList(tracks.map(::PlaylistItem)),
+        RecursiveTreeObject<PlaylistItem>::getChildren
+    )
+
+private fun loadIcon(iconPath: String): ByteArray =
+    Controller::class.java.getResourceAsStream(iconPath).use(InputStream::readBytes)
+
+private const val aboutApp = "Minimal Viable Player - lives in system tray and plays streaming audio.\n\n\u00a9 2020, Leonid Bogdanov"
+private val mvpPlaylist = Paths.get(System.getProperty("user.home"), "mvp.m3u8").toFile()

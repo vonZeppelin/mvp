@@ -1,23 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
+<?import com.jfoenix.controls.JFXButton?>
+<?import com.jfoenix.controls.JFXTreeTableView?>
+<?import com.jfoenix.controls.JFXTreeTableColumn?>
 <?import javafx.scene.control.CheckMenuItem?>
 <?import javafx.scene.control.ContextMenu?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.SeparatorMenuItem?>
-<?import javafx.scene.control.TableColumn?>
-<?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.StackPane?>
+<?import mvp.ui.ControllerKt?>
+<?import mvp.ui.Spectrum?>
 
 <StackPane stylesheets="@ui.css" xmlns:fx="http://javafx.com/fxml" fx:controller="mvp.ui.Controller">
     <fx:define>
         <ContextMenu fx:id="appMenu">
             <items>
                 <MenuItem onAction="#addTrack" text="Add new track"/>
-                <MenuItem onAction="#importPlaylist" text="Import playlist..."/>
+                <MenuItem onAction="#openPlaylist" text="Open playlist..."/>
                 <SeparatorMenuItem/>
                 <CheckMenuItem selected="true" text="InstaPause"/>
                 <CheckMenuItem fx:id="showAuxIcons" text="Next/Prev buttons"/>
@@ -27,44 +28,36 @@
                 <MenuItem onAction="#exitApp" text="Quit"/>
             </items>
         </ContextMenu>
-        <ContextMenu fx:id="trackMenu">
-            <items>
-                <MenuItem onAction="#playTrack" text="Play"/>
-                <SeparatorMenuItem/>
-                <MenuItem onAction="#editTrack" text="Edit"/>
-                <MenuItem onAction="#deleteTrack" text="Delete"/>
-            </items>
-        </ContextMenu>
     </fx:define>
 
     <padding>
-        <Insets topRightBottomLeft="$INSETS"/>
+        <ControllerKt fx:constant="ROOT_PADDING"/>
     </padding>
 
     <BorderPane>
         <top>
             <BorderPane>
                 <center>
-                    <Label fx:id="trackTitle" text="Track title goes here" />
+                    <Spectrum fx:id="spectrum"/>
                 </center>
                 <right>
-                    <Button fx:id="appMenuButton" onAction="#showAppMenu" text="⋮" />
+                    <JFXButton disableVisualFocus="true" onAction="#showAppMenu" text="⋮"/>
                 </right>
             </BorderPane>
         </top>
         <center>
-            <TableView fx:id="playlist" editable="true">
+            <JFXTreeTableView fx:id="playlist" editable="true" showRoot="false">
                 <columns>
-                    <TableColumn maxWidth="35" resizable="false" sortable="false"/>
-                    <TableColumn maxWidth="${playlist.width - 40}" sortable="false" text="Track"/>
+                    <JFXTreeTableColumn fx:id="statusCol" contextMenu="$null" minWidth="30" maxWidth="30" resizable="false" sortable="false"/>
+                    <JFXTreeTableColumn fx:id="trackCol" contextMenu="$null" sortable="false" text="Track"/>
                 </columns>
                 <columnResizePolicy>
-                    <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                    <JFXTreeTableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
                 </columnResizePolicy>
                 <placeholder>
                     <Label>Add or import some ♫ via app menu</Label>
                 </placeholder>
-            </TableView>
+            </JFXTreeTableView>
         </center>
     </BorderPane>
 </StackPane>

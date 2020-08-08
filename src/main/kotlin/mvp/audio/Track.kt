@@ -1,4 +1,4 @@
-package mvp
+package mvp.audio
 
 import javafx.beans.property.ObjectProperty
 import javafx.beans.property.SimpleObjectProperty
@@ -9,8 +9,10 @@ import java.net.URI
 import java.nio.charset.Charset.defaultCharset
 
 class Track(name: String, url: URI) {
-    val nameProperty: StringProperty = SimpleStringProperty(this, "name", name)
-    val urlProperty: ObjectProperty<URI> = SimpleObjectProperty(this, "url", url)
+    constructor(name: String, url: String) : this(name, URI(url))
+
+    val nameProperty: StringProperty = SimpleStringProperty(this, this::name.name, name)
+    val urlProperty: ObjectProperty<URI> = SimpleObjectProperty(this, this::url.name, url)
 
     var name: String
         get() = nameProperty.get()
@@ -22,12 +24,17 @@ class Track(name: String, url: URI) {
 }
 
 fun readM3U(file: File): List<Track> {
-    val charset = if (file.extension.equals("m3u8", ignoreCase = true)) Charsets.UTF_8 else defaultCharset()
+    val charset =
+        if (file.extension.equals("m3u8", ignoreCase = true))
+            Charsets.UTF_8
+        else
+            defaultCharset()
+
     return file.useLines(charset) {
         val lines = it.iterator()
         when {
             !lines.hasNext() -> emptyList()
-            lines.next() != M3U_HEADER -> throw IllegalArgumentException("$file is not a M3U playlist")
+            lines.next() != M3U_HEADER -> error("$file is not a M3U playlist")
             else -> mutableListOf<Track>().apply {
                 while (lines.hasNext()) {
                     val line = lines.next()
@@ -36,12 +43,12 @@ fun readM3U(file: File): List<Track> {
                             Track(
                                 line.substringAfter(','),
                                 if (lines.hasNext())
-                                    URI.create(lines.next())
+                                    lines.next()
                                 else
-                                    throw IllegalArgumentException("$file is not a valid M3U playlist")
+                                    error("$file is not a valid M3U playlist")
                             )
                         else
-                            Track("Unknown track", URI.create(line))
+                            Track("Unknown track", line)
                     )
                 }
             }
@@ -51,15 +58,15 @@ fun readM3U(file: File): List<Track> {
 
 fun writeM3U(tracks: List<Track>, file: File) {
     file.printWriter().use { playlist ->
-        with(playlist) {
-            println(M3U_HEADER)
-            for (track in tracks) {
-                println("$M3U_INFO_PREFIX-1,${track.name}")
-                println(track.url.toASCIIString())
-            }
+        playlist.println(M3U_HEADER)
+        for (track in tracks) {
+            playlist.println("$M3U_INFO_PREFIX-1,${track.name}")
+            playlist.println(track.url.toASCIIString())
         }
     }
 }
+
+val UNKNOWN_TRACK = Track("N/A", "N/A")
 
 private const val M3U_HEADER = "#EXTM3U"
 private const val M3U_INFO_PREFIX = "#EXTINF:"

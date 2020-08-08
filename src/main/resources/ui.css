@@ -1,16 +1,31 @@
-#appMenuButton {
-    -fx-background-color: none;
+.jfx-tree-table-view .column-header .label {
+    -fx-padding: 0.166667em
 }
 
-#appMenuButton:armed, #appMenuButton:hover {
-    -fx-background-color: -fx-shadow-highlight-color, -fx-outer-border, -fx-inner-border, -fx-body-color;
+.root {
+    -fx-background-insets: 5px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 10, .5, 2, 2);
 }
 
-#trackTitle {
-    -fx-border-width: 1;
-    -fx-border-color: black;
+.track-table-cell {
+    -fx-spacing: 5px;
 }
 
-.track-table-cell .text-field:invalid {
-    -fx-effect: dropshadow(three-pass-box, darkred, 7, 0, 0, 0);
+.track-table-cell .error-label {
+    visibility: hidden;
+}
+
+.track-table-cell .text-field {
+    -fx-background-position: 0.333333em 50%;
+    -fx-background-repeat: no-repeat;
+    -fx-background-size: 1.25em 1.25em;
+    -fx-padding: 0.333333em 0 0.333333em 1.75em;
+}
+
+.track-name-input {
+    -fx-background-image: url("title.png");
+}
+
+.track-url-input {
+    -fx-background-image: url("link.png");
 }
