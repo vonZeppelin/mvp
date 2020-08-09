@@ -66,9 +66,9 @@ interface DispatchProc : Callback {
 }
 
 object LibUIOHook {
-    @JvmStatic external fun hook_set_logger_proc(proc: LoggerProc)
-    @JvmStatic external fun hook_set_dispatch_proc(proc: DispatchProc)
     @JvmStatic external fun hook_run(): Int
+    @JvmStatic external fun hook_set_dispatch_proc(proc: DispatchProc)
+    @JvmStatic external fun hook_set_logger_proc(proc: LoggerProc)
     @JvmStatic external fun hook_stop(): Int
 
     val NOOP_LOGGER: LoggerProc = object : LoggerProc {

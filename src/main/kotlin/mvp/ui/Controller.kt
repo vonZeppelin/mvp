@@ -63,24 +63,22 @@ class Controller(private val stage: Stage) {
     }
 
     @FXML fun aboutApp() {
-        keepStageVisible {
-            JFXAlert<Unit>()
-                .apply {
-                    animation = JFXAlertAnimation.NO_ANIMATION
-                    setContent(
-                        JFXDialogLayout().apply {
-                            setHeading(Label("About MVP"))
-                            setBody(Text(aboutApp))
-                            setActions(
-                                JFXButton("Close").apply {
-                                    setOnAction { close() }
-                                }
-                            )
-                        }
-                    )
-                }
-                .showAndWait()
-        }
+        JFXAlert<Unit>()
+            .apply {
+                animation = JFXAlertAnimation.NO_ANIMATION
+                setContent(
+                    JFXDialogLayout().apply {
+                        setHeading(Label("About MVP"))
+                        setBody(Text(aboutApp))
+                        setActions(
+                            JFXButton("Close").apply {
+                                setOnAction { close() }
+                            }
+                        )
+                    }
+                )
+            }
+            .showAndWait()
     }
 
     @FXML fun addTrack() {
@@ -100,13 +98,11 @@ class Controller(private val stage: Stage) {
     }
 
     @FXML fun openPlaylist() {
-        keepStageVisible {
-            FileChooser()
-                .apply { extensionFilters += FileChooser.ExtensionFilter("Playlists", "*.m3u", "*.m3u8") }
-                .showOpenMultipleDialog(stage)
-                ?.flatMap(::readM3U)
-                ?.let { playlist.root = playlistRoot(it) }
-        }
+        FileChooser()
+            .apply { extensionFilters += FileChooser.ExtensionFilter("Playlists", "*.m3u", "*.m3u8") }
+            .showOpenMultipleDialog(stage)
+            ?.flatMap(::readM3U)
+            ?.let { playlist.root.children += it.map(::TreeItem) }
     }
 
     @FXML fun showAppMenu(evt: ActionEvent) {
@@ -114,9 +110,11 @@ class Controller(private val stage: Stage) {
     }
 
     @FXML fun initialize() {
-        playlist.root = playlistRoot(
-            if (mvpPlaylist.exists()) readM3U(mvpPlaylist) else emptyList()
-        )
+        playlist.root = TreeItem<Track>().apply {
+            if (mvpPlaylist.exists()) {
+                children += readM3U(mvpPlaylist).map(::TreeItem)
+            }
+        }
         statusCol.cellValueFactory = Callback {
             Bindings.`when`(Bindings.equal(it.value.value, Player.trackProperty))
                 .then(Player.statusProperty)
@@ -157,23 +155,12 @@ class Controller(private val stage: Stage) {
         listOf("previous", "play", "next").forEach(statusBar::removeIcon)
     }
 
-    /**
-     * A hack to prevent the primary [Stage] from being hidden when it loses focus when a dialog is displayed.
-     */
-    private fun keepStageVisible(block: () -> Unit) {
-        try {
-            stage.userData = ""
-            block()
-        } finally {
-            stage.userData = null
-        }
-    }
 
     // TODO Proper positioning, East-West support?
     private fun showUI(click: Point2D) {
         val scene = if (stage.isShowing) return else stage.scene
 
-        val screenBounds = Screen.getScreensForRectangle(click.x, click.y, 1.0, 1.0)
+        val screenBounds = Screen.getScreensForRectangle(click.x, click.y, 0.0, 0.0)
             .single()
             .visualBounds
         val arrowheadX = click.x.coerceIn(screenBounds.minX, screenBounds.maxX)
@@ -198,11 +185,6 @@ class Controller(private val stage: Stage) {
         stage.toFront()
     }
 }
-
-private fun playlistRoot(tracks: List<Track>): TreeItem<Track> =
-    TreeItem<Track>().apply {
-        children += tracks.map(::TreeItem)
-    }
 
 private fun loadIcon(iconPath: String): ByteArray =
     Controller::class.java.getResourceAsStream(iconPath).use(InputStream::readBytes)

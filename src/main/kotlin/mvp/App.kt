@@ -13,6 +13,8 @@ import mvp.ui.ARROW_HEIGHT
 import mvp.ui.Controller
 
 class App : Application() {
+    private lateinit var uiHooks: UIHooks
+
     override fun start(primaryStage: Stage) {
         with(primaryStage) {
             initStyle(StageStyle.TRANSPARENT)
@@ -22,13 +24,12 @@ class App : Application() {
                 SCENE_HEIGHT,
                 Color.TRANSPARENT
             )
-            focusedProperty().addListener { _, hadFocus, _ ->
-                if (hadFocus && userData == null) hide()
-            }
+            uiHooks = UIHooks(this)
         }
     }
 
     override fun stop() {
+        uiHooks.dispose()
         Player.destroy()
     }
 }
