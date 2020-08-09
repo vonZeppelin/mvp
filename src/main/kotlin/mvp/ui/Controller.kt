@@ -8,7 +8,6 @@ import com.sun.jna.Pointer
 import java.io.InputStream
 import java.nio.file.Paths
 import javafx.application.Platform
-import javafx.beans.binding.Bindings
 import javafx.event.ActionEvent
 import javafx.fxml.FXML
 import javafx.geometry.Insets
@@ -45,7 +44,7 @@ class Controller(private val stage: Stage) {
     @FXML private lateinit var appMenu: ContextMenu
     @FXML private lateinit var showAuxIcons: CheckMenuItem
     @FXML private lateinit var playlist: TreeTableView<Track>
-    @FXML private lateinit var statusCol: TreeTableColumn<Track, Player.Status>
+    @FXML private lateinit var statusCol: TreeTableColumn<Track, out Node>
     @FXML private lateinit var trackCol: TreeTableColumn<Track, String>
 
     private val statusBar: StatusBar = StatusBar { (id, location, isRightButton) ->
@@ -115,11 +114,7 @@ class Controller(private val stage: Stage) {
                 children += readM3U(mvpPlaylist).map(::TreeItem)
             }
         }
-        statusCol.cellValueFactory = Callback {
-            Bindings.`when`(Bindings.equal(it.value.value, Player.trackProperty))
-                .then(Player.statusProperty)
-                .otherwise(null as Player.Status?)
-        }
+        statusCol.cellValueFactory = StatusCellFactory
         trackCol.cellFactory = Callback { TrackCell() }
         trackCol.cellValueFactory = Callback { it.value.value.nameProperty }
 
@@ -154,7 +149,6 @@ class Controller(private val stage: Stage) {
     private fun hideTrayIcons() {
         listOf("previous", "play", "next").forEach(statusBar::removeIcon)
     }
-
 
     // TODO Proper positioning, East-West support?
     private fun showUI(click: Point2D) {

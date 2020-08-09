@@ -7,12 +7,17 @@ import com.jfoenix.controls.cells.editors.base.GenericEditableTreeTableCell
 import com.jfoenix.validation.RequiredFieldValidator
 import com.jfoenix.validation.base.ValidatorBase
 import java.net.URI
+import java.util.concurrent.Callable
 import javafx.application.Platform.runLater
+import javafx.beans.binding.Bindings
 import javafx.beans.value.ChangeListener
+import javafx.beans.value.ObservableValue
 import javafx.event.EventHandler
 import javafx.geometry.Pos
+import javafx.scene.Node
 import javafx.scene.control.Label
 import javafx.scene.control.TextInputControl
+import javafx.scene.control.TreeTableColumn.CellDataFeatures
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.input.KeyEvent
@@ -20,7 +25,25 @@ import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
+import javafx.util.Callback
+import mvp.audio.Player
+import mvp.audio.Player.Status
 import mvp.audio.Track
+
+val StatusCellFactory = Callback<CellDataFeatures<Track, out Node>, ObservableValue<out Node?>> { cellDataFeatures ->
+    Bindings.createObjectBinding(
+        Callable {
+            when {
+                cellDataFeatures.value.value != Player.track -> null
+                Player.status == Status.ERROR -> ImageView("/error.png")
+                Player.status == Status.LOADING -> ImageView("/loading.png")
+                Player.status == Status.PLAYING -> ImageView("/play-cell.png")
+                else -> null
+            }
+        },
+        Player.statusProperty, Player.trackProperty
+    )
+}
 
 class TrackCell : GenericEditableTreeTableCell<Track, String>(null) {
     private inner class TrackEditorBuilder : EditorNodeBuilder<Any> {
@@ -110,7 +133,7 @@ class TrackCell : GenericEditableTreeTableCell<Track, String>(null) {
                 treeTableView.root.children -= treeTableRow.treeItem
                 treeTableView.refresh()
             }
-            visibleProperty().bind(treeTableRow.selectedProperty())
+            visibleProperty().bind(treeTableRow.hoverProperty())
         }
         val spacer = Region().apply {
             HBox.setHgrow(this, Priority.ALWAYS)
