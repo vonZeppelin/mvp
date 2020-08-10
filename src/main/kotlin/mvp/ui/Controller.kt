@@ -154,7 +154,7 @@ class Controller(private val stage: Stage) {
     private fun showUI(click: Point2D) {
         val scene = if (stage.isShowing) return else stage.scene
 
-        val screenBounds = Screen.getScreensForRectangle(click.x, click.y, 0.0, 0.0)
+        val screenBounds = Screen.getScreensForRectangle(click.x, click.y, 1.0, 1.0)
             .single()
             .visualBounds
         val arrowheadX = click.x.coerceIn(screenBounds.minX, screenBounds.maxX)

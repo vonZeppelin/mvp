@@ -36,7 +36,7 @@ class UIHooks(private val stage: Stage) {
         val mouseX = event.x.toDouble()
         val mouseY = event.y.toDouble()
         // TODO East-West support?
-        val screenBounds = Screen.getScreensForRectangle(mouseX, mouseY, 0.0, 0.0)
+        val screenBounds = Screen.getScreensForRectangle(mouseX, mouseY, 1.0, 1.0)
             .single()
             .visualBounds
         // consider mouse clicks "inside" screen only
