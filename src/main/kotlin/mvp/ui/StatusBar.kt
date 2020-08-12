@@ -32,22 +32,15 @@ class StatusBar(eventListener: EventListener) {
             autoreleasepool {
                 val itemId = args[0]
                 val imageData = args[1]
-
-                val statusBar = "NSStatusBar".nsClass()
+                val item = "NSStatusBar".nsClass()
                     .msgSend<Pointer>("systemStatusBar")
-
-                val imageSize = statusBar.msgSend<Double>("thickness") * 0.75
-                val image = "NSImage".nsClass()
-                    .msgSend<Pointer>("alloc")
-                    .msgSend<Pointer>("initWithData:", imageData)
-                image.msgSend<Pointer>("setTemplate:", true)
-                image.msgSend<Pointer>("setSize:", NSSize.ByValue(imageSize, imageSize))
-
-                val itemButton = statusBar
                     .msgSend<Pointer>("statusItemWithLength:", -1.0)
                     .msgSend<Pointer>("retain")
+                val itemButton = item
                     .msgSend<Pointer>("button")
-                itemButton.msgSend<Pointer>("setImage:", image)
+
+                setStatusItemIcon(item, imageData)
+
                 itemButton.msgSend<Pointer>("setTarget:", self)
                 // action mask is (NSEventMaskLeftMouseDown | NSEventMaskRightMouseDown)
                 itemButton.msgSend<Pointer>("sendActionOn:", (1 shl 1) or (1 shl 3))
@@ -69,6 +62,7 @@ class StatusBar(eventListener: EventListener) {
                     .msgSendS("frame", NSRect())
                 val buttonNumber = NSApp.msgSend<Pointer>("currentEvent")
                     .msgSend<Long>("buttonNumber")
+
                 runLater {
                     eventListener(
                         StatusBarEvent(
@@ -88,11 +82,29 @@ class StatusBar(eventListener: EventListener) {
         fun callback(self: Pointer, cmd: Pointer, args: Pointer) {
             autoreleasepool {
                 val itemId = args[0]
+
                 removeStatusItems {
                     it.msgSend<Pointer>("button")
                         .msgSend<Pointer>("tag")
                         .msgSend("isEqualToString:", itemId)
                 }
+            }
+        }
+    }
+    private object UpdateItem : Callback {
+        fun callback(self: Pointer, cmd: Pointer, args: Pointer) {
+            autoreleasepool {
+                val itemId = args[0]
+                val imageData = args[1]
+                val item = enumerateStatusItems()
+                    .find {
+                        it.msgSend<Pointer>("button")
+                            .msgSend<Pointer>("tag")
+                            .msgSend("isEqualToString:", itemId)
+                    }
+                    ?: error("Invalid item id")
+
+                setStatusItemIcon(item, imageData)
             }
         }
     }
@@ -121,6 +133,7 @@ class StatusBar(eventListener: EventListener) {
             OBJC.class_addMethod(this, "removeItem:".nsSelector(), RemoveItem, "v@:@:@")
             OBJC.class_addMethod(this, "start".nsSelector(), Start, "v@:@")
             OBJC.class_addMethod(this, "stop".nsSelector(), Stop, "v@:@")
+            OBJC.class_addMethod(this, "updateItem:".nsSelector(), UpdateItem, "v@:@:@")
             OBJC.objc_registerClassPair(this)
         }
     private val appDelegate: Pointer = autoreleasepool {
@@ -151,18 +164,31 @@ class StatusBar(eventListener: EventListener) {
             appDelegate.performInMainThread("removeItem:", nsArrayOf(id.nsString()))
         }
     }
+
+    fun updateIcon(id: String, icon: ByteArray) {
+        autoreleasepool {
+            val imageData = "NSData".nsClass()
+                .msgSend<Pointer>("dataWithBytes:length:", icon, icon.size)
+            appDelegate.performInMainThread("updateItem:", nsArrayOf(id.nsString(), imageData))
+        }
+    }
 }
 
-private fun removeStatusItems(predicate: (Pointer) -> Boolean = { true }) {
+private fun enumerateStatusItems(): Sequence<Pointer> {
     val statusBarWindowClass = "NSStatusBarWindow".nsClass()
-    val statusBar = "NSStatusBar".nsClass()
-        .msgSend<Pointer>("systemStatusBar")
     val windowsEnum = NSApp
         .msgSend<Pointer>("windows")
         .msgSend<Pointer>("objectEnumerator")
-    generateSequence { windowsEnum.msgSend<Pointer>("nextObject").takeIf { it != NULL_PTR } }
+
+    return generateSequence { windowsEnum.msgSend<Pointer>("nextObject").takeIf { it != NULL_PTR } }
         .filter { it.msgSend("isKindOfClass:", statusBarWindowClass) }
         .map { it.msgSend<Pointer>("statusItem") }
+}
+
+private fun removeStatusItems(predicate: (Pointer) -> Boolean = { true }) {
+    val statusBar = "NSStatusBar".nsClass()
+        .msgSend<Pointer>("systemStatusBar")
+    enumerateStatusItems()
         .filter(predicate)
         .forEach {
             it.msgSend<Pointer>("button")
@@ -171,4 +197,18 @@ private fun removeStatusItems(predicate: (Pointer) -> Boolean = { true }) {
             statusBar.msgSend<Pointer>("removeStatusItem:", it)
             it.msgSend<Pointer>("release")
         }
+}
+
+private fun setStatusItemIcon(item: Pointer, imageData: Pointer) {
+    val statusBar = item.msgSend<Pointer>("statusBar")
+    val imageSize = statusBar.msgSend<Double>("thickness") * 0.75
+    val image = "NSImage".nsClass()
+        .msgSend<Pointer>("alloc")
+        .msgSend<Pointer>("initWithData:", imageData)
+
+    image.msgSend<Pointer>("setTemplate:", true)
+    image.msgSend<Pointer>("setSize:", NSSize.ByValue(imageSize, imageSize))
+
+    item.msgSend<Pointer>("button")
+        .msgSend<Pointer>("setImage:", image)
 }

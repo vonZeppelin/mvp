@@ -30,6 +30,7 @@ import javafx.stage.Screen
 import javafx.stage.Stage
 import javafx.util.Callback
 import mvp.audio.Player
+import mvp.audio.Player.Status
 import mvp.audio.Track
 import mvp.audio.readM3U
 import mvp.audio.writeM3U
@@ -48,10 +49,17 @@ class Controller(private val stage: Stage) {
     @FXML private lateinit var trackCol: TreeTableColumn<Track, String>
 
     private val statusBar: StatusBar = StatusBar { (id, location, isRightButton) ->
+        fun playSibling(siblingProvider: (TreeItem<Track>) -> TreeItem<Track>?) {
+            playlist.root.children.find { it.value == Player.track }
+                ?.let(siblingProvider)
+                ?.let { Player.play(it.value) }
+        }
+
         when {
             isRightButton -> if (stage.isShowing) stage.hide() else showUI(location)
-            id == "play" -> toggleTrack()
-            Player.status != Player.Status.PLAYING -> return@StatusBar
+            id == PLAY_ICON_ID -> toggleTrack()
+            id == PREVIOUS_ICON_ID -> playSibling(TreeItem<Track>::previousSibling)
+            id == NEXT_ICON_ID -> playSibling(TreeItem<Track>::nextSibling)
         }
     }
     private val isDarkTheme: Boolean by lazy {
@@ -68,7 +76,7 @@ class Controller(private val stage: Stage) {
                 setContent(
                     JFXDialogLayout().apply {
                         setHeading(Label("About MVP"))
-                        setBody(Text(aboutApp))
+                        setBody(Text(ABOUT_APP))
                         setActions(
                             JFXButton("Close").apply {
                                 setOnAction { close() }
@@ -122,32 +130,41 @@ class Controller(private val stage: Stage) {
             hideTrayIcons()
             showTrayIcons(newValue)
         }
+        Player.statusProperty.addListener { _, _, newValue ->
+            val newIcon = when (newValue) {
+                Status.LOADING, Status.PLAYING -> "/stop.png"
+                Status.ERROR, Status.STANDBY -> "/play.png"
+                else -> return@addListener
+            }
+            statusBar.updateIcon(PLAY_ICON_ID, loadIcon(newIcon))
+        }
         showTrayIcons()
     }
 
     private fun toggleTrack() {
-        if (Player.status == Player.Status.PLAYING) {
-            Player.stop()
-        } else {
-            (playlist.selectionModel.selectedItem ?: playlist.root.children.firstOrNull())
-                ?.let {
-                    Player.play(it.value)
-                }
+        when (Player.status) {
+            Status.LOADING, Status.PLAYING -> Player.stop()
+            else -> (playlist.selectionModel.selectedItem ?: playlist.root.children.firstOrNull())?.let { Player.play(it.value) }
         }
     }
 
     private fun showTrayIcons(showAuxIcons: Boolean = false) {
         if (showAuxIcons) {
-            statusBar.addIcon("next", loadIcon("/next.png"))
+            statusBar.addIcon(NEXT_ICON_ID, loadIcon("/next.png"))
         }
-        statusBar.addIcon("play", loadIcon("/play.png"))
+        statusBar.addIcon(
+            PLAY_ICON_ID,
+            loadIcon(
+                if (Player.status == Status.PLAYING) "/stop.png" else "/play.png"
+            )
+        )
         if (showAuxIcons) {
-            statusBar.addIcon("previous", loadIcon("/previous.png"))
+            statusBar.addIcon(PREVIOUS_ICON_ID, loadIcon("/previous.png"))
         }
     }
 
     private fun hideTrayIcons() {
-        listOf("previous", "play", "next").forEach(statusBar::removeIcon)
+        listOf(PREVIOUS_ICON_ID, PLAY_ICON_ID, NEXT_ICON_ID).forEach(statusBar::removeIcon)
     }
 
     // TODO Proper positioning, East-West support?
@@ -183,5 +200,8 @@ class Controller(private val stage: Stage) {
 private fun loadIcon(iconPath: String): ByteArray =
     Controller::class.java.getResourceAsStream(iconPath).use(InputStream::readBytes)
 
-private const val aboutApp = "Minimal Viable Player - lives in system tray and plays streaming audio.\n\n\u00a9 2020, Leonid Bogdanov"
+private const val NEXT_ICON_ID = "next"
+private const val PLAY_ICON_ID = "play/stop"
+private const val PREVIOUS_ICON_ID = "previous"
+private const val ABOUT_APP = "Minimal Viable Player - lives in system tray and plays streaming audio.\n\n\u00a9 2020, Leonid Bogdanov"
 private val mvpPlaylist = Paths.get(System.getProperty("user.home"), "mvp.m3u8").toFile()

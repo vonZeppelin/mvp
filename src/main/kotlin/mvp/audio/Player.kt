@@ -1,8 +1,9 @@
 package mvp.audio
 
 import com.sun.jna.Pointer
-import javafx.application.Platform
+import javafx.application.Platform.runLater
 import java.util.concurrent.CompletableFuture
+import java.util.Timer
 import javafx.beans.property.ReadOnlyObjectProperty
 import javafx.beans.property.ReadOnlyObjectWrapper
 import kotlin.concurrent.timer
@@ -28,7 +29,18 @@ object Player {
     val track: Track
         get() = trackProperty.get()
 
-    private var stream: CompletableFuture<Pointer> = CompletableFuture.completedFuture(NULL_PTR)
+    private val timer: Timer = timer(initialDelay = 100, period = 100, daemon = true) {
+        val devices = sequence {
+                var i = 1
+                val info = DeviceInfo()
+                while(LibBASS.BASS_GetDeviceInfo(i++, info)) {
+                    yield(Device(info.name, info.flags))
+                }
+            }
+            .filter { (it.flags and LibBASS.BASS_DEVICE_ENABLED) != 0 }
+            .toSet()
+        runLater { _devicesProperty.set(devices) }
+    }
 
     private val metaSync = object : SYNCPROC {
         override fun callback(handle: Pointer, channel: Pointer, data: Int, userData: Pointer?) {
@@ -38,35 +50,24 @@ object Player {
 
     private val stallSync = object : SYNCPROC {
         override fun callback(handle: Pointer, channel: Pointer, data: Int, userData: Pointer?) {
-            println("stall")
+            when (data) {
+                0 -> runLater { _statusProperty.set(Status.LOADING) }
+                1 -> runLater { _statusProperty.set(Status.PLAYING) }
+            }
         }
     }
 
-    init {
-        timer(initialDelay = 100, period = 100, daemon = true) {
-            val devices = sequence {
-                var i = 1
-                val info = DeviceInfo()
-                while(LibBASS.BASS_GetDeviceInfo(i++, info)) {
-                    yield(Device(info.name, info.flags))
-                }
-            }
-            .filter { (it.flags and LibBASS.BASS_DEVICE_ENABLED) != 0 }
-            .toSet()
-            Platform.runLater {
-                _devicesProperty.set(devices)
-            }
-        }
-    }
+    private var stream: CompletableFuture<Pointer> = CompletableFuture.completedFuture(NULL_PTR)
 
     fun play(track: Track) {
         stop()
         stream = CompletableFuture
             .supplyAsync {
-                Platform.runLater {
+                runLater {
                     _trackProperty.set(track)
                     _statusProperty.set(Status.LOADING)
                 }
+
                 val stream = LibBASS.BASS_StreamCreateURL(
                     track.url.toASCIIString(),
                     0,
@@ -82,15 +83,12 @@ object Player {
                 check(LibBASS.BASS_ChannelPlay(stream, true)) {
                     "Couldn't play channel, error code ${LibBASS.BASS_ErrorGetCode()}"
                 }
-                Platform.runLater {
-                    _statusProperty.set(Status.PLAYING)
-                }
+                runLater { _statusProperty.set(Status.PLAYING) }
+
                 stream
             }
             .exceptionally {
-                Platform.runLater {
-                    _statusProperty.set(Status.ERROR)
-                }
+                runLater { _statusProperty.set(Status.ERROR) }
                 NULL_PTR
             }
     }
@@ -98,14 +96,13 @@ object Player {
     fun stop() {
         stream
             .thenAccept {
-                Platform.runLater {
-                    _statusProperty.set(Status.STANDBY)
-                }
+                runLater { _statusProperty.set(Status.STANDBY) }
                 LibBASS.BASS_StreamFree(it)
             }
     }
 
     fun destroy() {
+        timer.cancel()
         LibBASS.BASS_Free()
     }
 }
