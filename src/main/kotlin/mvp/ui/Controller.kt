@@ -209,5 +209,5 @@ private fun loadIcon(iconPath: String): ByteArray =
 private const val NEXT_ICON_ID = "next"
 private const val PLAY_ICON_ID = "play/stop"
 private const val PREVIOUS_ICON_ID = "previous"
-private const val ABOUT_APP = "Minimal Viable Player - lives in system tray and plays streaming audio.\n\n\u00a9 2020, Leonid Bogdanov"
+private const val ABOUT_APP = "Minimal Viable Player - lives in the taskbar and plays streaming audio.\n\n\u00a9 2020, Leonid Bogdanov"
 private val mvpPlaylist = Paths.get(System.getProperty("user.home"), "mvp.m3u8").toFile()
