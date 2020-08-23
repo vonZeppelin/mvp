@@ -20,7 +20,7 @@
                 <MenuItem onAction="#addTrack" text="Add new track"/>
                 <MenuItem onAction="#openPlaylist" text="Open playlist..."/>
                 <SeparatorMenuItem/>
-                <CheckMenuItem selected="true" text="InstaPause"/>
+                <CheckMenuItem fx:id="instaPause" selected="true" text="InstaPause"/>
                 <CheckMenuItem fx:id="showAuxIcons" text="Next/Prev buttons"/>
                 <SeparatorMenuItem/>
                 <MenuItem onAction="#aboutApp" text="About MVP"/>

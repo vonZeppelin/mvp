@@ -43,23 +43,18 @@ const val ARROW_HEIGHT = 10.0
 
 class Controller(private val stage: Stage) {
     @FXML private lateinit var appMenu: ContextMenu
+    @FXML private lateinit var instaPause: CheckMenuItem
     @FXML private lateinit var showAuxIcons: CheckMenuItem
     @FXML private lateinit var playlist: TreeTableView<Track>
     @FXML private lateinit var statusCol: TreeTableColumn<Track, out Node>
     @FXML private lateinit var trackCol: TreeTableColumn<Track, String>
 
     private val statusBar: StatusBar = StatusBar { (id, location, isRightButton) ->
-        fun playSibling(siblingProvider: (TreeItem<Track>) -> TreeItem<Track>?) {
-            playlist.root.children.find { it.value == Player.track }
-                ?.let(siblingProvider)
-                ?.let { Player.play(it.value) }
-        }
-
         when {
             isRightButton -> if (stage.isShowing) stage.hide() else showUI(location)
             id == PLAY_ICON_ID -> toggleTrack()
-            id == PREVIOUS_ICON_ID -> playSibling(TreeItem<Track>::previousSibling)
-            id == NEXT_ICON_ID -> playSibling(TreeItem<Track>::nextSibling)
+            id == PREVIOUS_ICON_ID -> playNextTrack(reverse = true)
+            id == NEXT_ICON_ID -> playNextTrack()
         }
     }
     private val isDarkTheme: Boolean by lazy {
@@ -99,8 +94,9 @@ class Controller(private val stage: Stage) {
     }
 
     @FXML fun exitApp() {
-        writeM3U(playlist.root.children.map { it.value }, mvpPlaylist)
+        Player.destroy()
         statusBar.destroy()
+        writeM3U(playlist.root.children.map { it.value }, mvpPlaylist)
         Platform.exit()
     }
 
@@ -126,10 +122,7 @@ class Controller(private val stage: Stage) {
         trackCol.cellFactory = Callback { TrackCell() }
         trackCol.cellValueFactory = Callback { it.value.value.nameProperty }
 
-        showAuxIcons.selectedProperty().addListener { _, _, newValue ->
-            hideTrayIcons()
-            showTrayIcons(newValue)
-        }
+        Player.instaPauseProperty.bind(instaPause.selectedProperty())
         Player.statusProperty.addListener { _, _, newValue ->
             val newIcon = when (newValue) {
                 Status.LOADING, Status.PLAYING -> "/stop.png"
@@ -138,14 +131,27 @@ class Controller(private val stage: Stage) {
             }
             statusBar.updateIcon(PLAY_ICON_ID, loadIcon(newIcon))
         }
+        showAuxIcons.selectedProperty().addListener { _, _, newValue ->
+            hideTrayIcons()
+            showTrayIcons(newValue)
+        }
         showTrayIcons()
     }
 
-    private fun toggleTrack() {
+    fun toggleTrack() {
         when (Player.status) {
             Status.LOADING, Status.PLAYING -> Player.stop()
             else -> (playlist.selectionModel.selectedItem ?: playlist.root.children.firstOrNull())?.let { Player.play(it.value) }
         }
+    }
+
+    fun playNextTrack(reverse: Boolean = false) {
+        val siblingProvider: (TreeItem<Track>) -> TreeItem<Track>? =
+            if (reverse) TreeItem<Track>::previousSibling else TreeItem<Track>::nextSibling
+
+        playlist.root.children.find { it.value == Player.track }
+            ?.let(siblingProvider)
+            ?.run { Player.play(value) }
     }
 
     private fun showTrayIcons(showAuxIcons: Boolean = false) {

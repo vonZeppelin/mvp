@@ -3,12 +3,12 @@ package mvp
 import javafx.application.Application
 import javafx.application.Platform
 import javafx.fxml.FXMLLoader
+import javafx.scene.Parent
 import javafx.scene.Scene
 import javafx.scene.paint.Color
 import javafx.stage.Stage
 import javafx.stage.StageStyle
 import javafx.util.Callback
-import mvp.audio.Player
 import mvp.ui.ARROW_HEIGHT
 import mvp.ui.Controller
 
@@ -18,19 +18,14 @@ class App : Application() {
     override fun start(primaryStage: Stage) {
         with(primaryStage) {
             initStyle(StageStyle.TRANSPARENT)
-            scene = Scene(
-                "/ui.fxml".loadFXML(this),
-                SCENE_WIDTH,
-                SCENE_HEIGHT,
-                Color.TRANSPARENT
-            )
-            uiHooks = UIHooks(this)
+            val (root, controller) = "/ui.fxml".loadFXML<Parent, Controller>(this)
+            scene = Scene(root, SCENE_WIDTH, SCENE_HEIGHT, Color.TRANSPARENT)
+            uiHooks = UIHooks(this, controller)
         }
     }
 
     override fun stop() {
         uiHooks.dispose()
-        Player.destroy()
     }
 }
 
@@ -42,7 +37,7 @@ fun main(args: Array<String>) {
 private const val SCENE_WIDTH = 350.0 + ARROW_HEIGHT * 2
 private const val SCENE_HEIGHT = 200.0 + ARROW_HEIGHT * 2
 
-private fun <T> String.loadFXML(stage: Stage): T =
+private fun <ROOT : Parent, CONTROLLER> String.loadFXML(stage: Stage): Pair<ROOT, CONTROLLER> =
     FXMLLoader(App::class.java.getResource(this))
         .apply {
             controllerFactory = Callback {
@@ -52,4 +47,4 @@ private fun <T> String.loadFXML(stage: Stage): T =
                 }
             }
         }
-        .load()
+        .let { it.load<ROOT>() to it.getController<CONTROLLER>() }

@@ -16,6 +16,10 @@ const val EVENT_MOUSE_MOVED = 9
 const val EVENT_MOUSE_DRAGGED = 10
 const val EVENT_MOUSE_WHEEL = 11
 
+const val VC_MEDIA_PREVIOUS = 0xE010.toShort()
+const val VC_MEDIA_NEXT = 0xE019.toShort()
+const val VC_MEDIA_PLAY = 0xE022.toShort()
+
 class EventData : Union() {
     @Structure.FieldOrder("button", "clicks", "x", "y")
     class MouseEventData : Structure() {
