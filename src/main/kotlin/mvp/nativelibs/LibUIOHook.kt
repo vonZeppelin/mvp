@@ -80,7 +80,7 @@ object LibUIOHook {
     }
 
     init {
-        Native.register("uiohook")
+        loadLibraries("uiohook") { name, _ -> Native.register(name) }
 
         // by default, silence lib's chatty log output
         hook_set_logger_proc(NOOP_LOGGER)

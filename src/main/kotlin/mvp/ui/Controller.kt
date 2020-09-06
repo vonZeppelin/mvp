@@ -125,8 +125,8 @@ class Controller(private val stage: Stage) {
         Player.instaPauseProperty.bind(instaPause.selectedProperty())
         Player.statusProperty.addListener { _, _, newValue ->
             val newIcon = when (newValue) {
-                Status.LOADING, Status.PLAYING -> "/stop.png"
-                Status.ERROR, Status.STANDBY -> "/play.png"
+                Status.LOADING, Status.PLAYING -> "stop.png"
+                Status.ERROR, Status.STANDBY -> "play.png"
                 else -> return@addListener
             }
             statusBar.updateIcon(PLAY_ICON_ID, loadIcon(newIcon))
@@ -156,16 +156,16 @@ class Controller(private val stage: Stage) {
 
     private fun showTrayIcons(showAuxIcons: Boolean = false) {
         if (showAuxIcons) {
-            statusBar.addIcon(NEXT_ICON_ID, loadIcon("/next.png"))
+            statusBar.addIcon(NEXT_ICON_ID, loadIcon("next.png"))
         }
         statusBar.addIcon(
             PLAY_ICON_ID,
             loadIcon(
-                if (Player.status == Status.PLAYING) "/stop.png" else "/play.png"
+                if (Player.status == Status.PLAYING) "stop.png" else "play.png"
             )
         )
         if (showAuxIcons) {
-            statusBar.addIcon(PREVIOUS_ICON_ID, loadIcon("/previous.png"))
+            statusBar.addIcon(PREVIOUS_ICON_ID, loadIcon("previous.png"))
         }
     }
 
@@ -204,7 +204,7 @@ class Controller(private val stage: Stage) {
 }
 
 private fun loadIcon(iconPath: String): ByteArray =
-    Controller::class.java.getResourceAsStream(iconPath).use(InputStream::readBytes)
+    Controller::class.java.getResourceAsStream("/images/$iconPath").use(InputStream::readBytes)
 
 private const val NEXT_ICON_ID = "next"
 private const val PLAY_ICON_ID = "play/stop"

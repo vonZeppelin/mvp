@@ -49,12 +49,13 @@ object LibBASS {
     const val BASS_SYNC_OGG_CHANGE = 12
 
     init {
-        Native.register("bass")
-
-        listOf("bassflac", "basshls", "bassopus").forEach { plugin ->
-            val pluginFile = Native.extractFromResourcePath(plugin)
-            check(BASS_PluginLoad(pluginFile.absolutePath, 0) != 0) {
-                "Couldn't load '$plugin' plugin from file '$pluginFile', error code ${BASS_ErrorGetCode()}"
+        loadLibraries("bass", "bassflac", "basshls", "bassopus") { name, path ->
+            if (name == "bass") {
+                Native.register(name)
+            } else {
+                check(BASS_PluginLoad(path.toString(), 1) != 0) {
+                    "Couldn't load '$name' plugin from file '$path', error code ${BASS_ErrorGetCode()}"
+                }
             }
         }
     }

@@ -35,9 +35,9 @@ val StatusCellFactory = Callback<CellDataFeatures<Track, out Node>, ObservableVa
         Callable {
             when {
                 cellDataFeatures.value.value != Player.track -> null
-                Player.status == Status.ERROR -> ImageView("/error.png")
-                Player.status == Status.LOADING -> ImageView("/loading.png")
-                Player.status == Status.PLAYING -> ImageView("/play-cell.png")
+                Player.status == Status.ERROR -> ImageView("/images/error.png")
+                Player.status == Status.LOADING -> ImageView("/images/loading.png")
+                Player.status == Status.PLAYING -> ImageView("/images/play-cell.png")
                 else -> null
             }
         },
@@ -144,7 +144,7 @@ class TrackCell : GenericEditableTreeTableCell<Track, String>(null) {
     }
 
     private companion object {
-        val deleteIcon = Image("/delete.png", 16.0, 16.0, true, false)
+        val deleteIcon = Image("/images/delete.png", 16.0, 16.0, true, false)
         val requiredFieldValidator = RequiredFieldValidator("Required field")
         val urlFieldValidator = object : ValidatorBase("Invalid URL") {
             override fun eval() {

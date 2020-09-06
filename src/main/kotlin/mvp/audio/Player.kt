@@ -51,7 +51,7 @@ object Player {
 
     private val endSync: SYNCPROC = object : SYNCPROC {
         override fun callback(handle: Pointer, channel: Pointer, data: Int, userData: Pointer?) {
-            runLater { stop() }
+            runLater(::stop)
         }
     }
     private val metaSync: SYNCPROC = object : SYNCPROC {
@@ -123,7 +123,7 @@ object Player {
         override fun succeeded() { _statusProperty.set(Status.PLAYING) }
     }
 
-    private val instaPauseTimer: Timer = timer(initialDelay = 100, period = 50) {
+    private val instaPauseTimer: Timer = timer(daemon = true, initialDelay = 100, period = 150) {
         var maybeStream: Pointer? = null
         runInFXAndWait {
             maybeStream = streamService.value
@@ -138,18 +138,23 @@ object Player {
             ?: return@timer
 
         if (defaultDevice != currentDevice) {
+            var reassignDevices = false
             runInFXAndWait {
-                when {
-                    status != Status.PLAYING -> return@runInFXAndWait
-                    instaPause -> stop()
-                    else -> {
-                        LibBASS.BASS_Init(defaultDevice.id, OUTPUT_SAMPLE_RATE, 0)
-                        LibBASS.BASS_ChannelSetDevice(stream, defaultDevice.id)
-                        LibBASS.BASS_ChannelPlay(stream, true)
-                        LibBASS.BASS_SetDevice(currentDevice.id)
-                        LibBASS.BASS_Free()
+                reassignDevices = when {
+                    status != Status.PLAYING -> false
+                    instaPause -> {
+                        stop()
+                        false
                     }
+                    else -> true
                 }
+            }
+            if (reassignDevices) {
+                LibBASS.BASS_Init(defaultDevice.id, OUTPUT_SAMPLE_RATE, 0)
+                LibBASS.BASS_ChannelSetDevice(stream, defaultDevice.id)
+                LibBASS.BASS_ChannelPlay(stream, true)
+                LibBASS.BASS_SetDevice(currentDevice.id)
+                LibBASS.BASS_Free()
             }
         }
     }

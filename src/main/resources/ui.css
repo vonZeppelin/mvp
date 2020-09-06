@@ -23,9 +23,9 @@
 }
 
 .track-name-input {
-    -fx-background-image: url("title.png");
+    -fx-background-image: url("images/title.png");
 }
 
 .track-url-input {
-    -fx-background-image: url("link.png");
+    -fx-background-image: url("images/link.png");
 }
