@@ -17,6 +17,7 @@ import javafx.scene.Node
 import javafx.scene.control.CheckMenuItem
 import javafx.scene.control.ContextMenu
 import javafx.scene.control.Label
+import javafx.scene.control.Slider
 import javafx.scene.control.TreeItem
 import javafx.scene.control.TreeTableColumn
 import javafx.scene.control.TreeTableView
@@ -45,6 +46,7 @@ class Controller(private val stage: Stage) {
     @FXML private lateinit var appMenu: ContextMenu
     @FXML private lateinit var instaPause: CheckMenuItem
     @FXML private lateinit var showAuxIcons: CheckMenuItem
+    @FXML private lateinit var volume: Slider
     @FXML private lateinit var playlist: TreeTableView<Track>
     @FXML private lateinit var statusCol: TreeTableColumn<Track, out Node>
     @FXML private lateinit var trackCol: TreeTableColumn<Track, String>
@@ -131,6 +133,8 @@ class Controller(private val stage: Stage) {
             }
             statusBar.updateIcon(PLAY_ICON_ID, loadIcon(newIcon))
         }
+        Player.volumeProperty.bind(volume.valueProperty())
+
         showAuxIcons.selectedProperty().addListener { _, _, newValue ->
             hideTrayIcons()
             showTrayIcons(newValue)

@@ -20,6 +20,7 @@ object LibBASS {
     @JvmStatic external fun BASS_ChannelGetDevice(handle: Pointer): Int
     @JvmStatic external fun BASS_ChannelGetTags(handle: Pointer, tags: Int): String
     @JvmStatic external fun BASS_ChannelPlay(handle: Pointer, restart: Boolean): Boolean
+    @JvmStatic external fun BASS_ChannelSetAttribute(handle: Pointer, attribute: Int, volume: Float)
     @JvmStatic external fun BASS_ChannelSetDevice(handle: Pointer, device: Int): Boolean
     @JvmStatic external fun BASS_ChannelSetSync(handle: Pointer, type: Int, param: Long, proc: SYNCPROC, userData: Pointer = NULL_PTR): Pointer
     @JvmStatic external fun BASS_ErrorGetCode(): Int
@@ -41,6 +42,8 @@ object LibBASS {
     const val BASS_STREAM_AUTOFREE = 0x40000
     const val BASS_STREAM_BLOCK = 0x100000
     const val BASS_STREAM_STATUS = 0x800000
+
+    const val BASS_ATTRIB_VOL = 2
 
     const val BASS_SYNC_HLS_SEGMENT = 0x10300
     const val BASS_SYNC_END = 2

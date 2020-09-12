@@ -9,7 +9,7 @@ project("MVP") {
 
     val mainClass = "mvp.AppKt"
 
-    val javafxVersion = "14.0.2"
+    val javafxVersion = "15"
     val kotlinVersion = "1.3.72"
 
     dependencies {

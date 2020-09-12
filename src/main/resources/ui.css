@@ -1,5 +1,9 @@
+.jfx-slider {
+    -jfx-default-thumb: #000000;
+}
+
 .jfx-tree-table-view .column-header .label {
-    -fx-padding: 0.166667em
+    -fx-padding: 0.166667em;
 }
 
 .root {

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import com.jfoenix.controls.JFXButton?>
+<?import com.jfoenix.controls.JFXSlider?>
 <?import com.jfoenix.controls.JFXTreeTableView?>
 <?import com.jfoenix.controls.JFXTreeTableColumn?>
 <?import javafx.scene.control.CheckMenuItem?>
@@ -43,6 +44,9 @@
                 <right>
                     <JFXButton disableVisualFocus="true" onAction="#showAppMenu" text="⋮"/>
                 </right>
+                <bottom>
+                    <JFXSlider fx:id="volume" value="100"/>
+                </bottom>
             </BorderPane>
         </top>
         <center>

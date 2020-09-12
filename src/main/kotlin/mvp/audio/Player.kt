@@ -5,9 +5,11 @@ import com.sun.jna.Pointer
 import java.util.Timer
 import javafx.application.Platform.runLater
 import javafx.beans.property.BooleanProperty
+import javafx.beans.property.DoubleProperty
 import javafx.beans.property.ReadOnlyObjectProperty
 import javafx.beans.property.ReadOnlyObjectWrapper
 import javafx.beans.property.SimpleBooleanProperty
+import javafx.beans.property.SimpleDoubleProperty
 import javafx.concurrent.Service
 import javafx.concurrent.Task
 import kotlin.concurrent.timer
@@ -32,6 +34,10 @@ private data class Device(val id: Int, val name: String, val flags: Int) {
     }
 }
 
+private fun setStreamVolume(stream: Pointer, volume: Double) {
+    LibBASS.BASS_ChannelSetAttribute(stream, LibBASS.BASS_ATTRIB_VOL, (volume / 100.0).toFloat())
+}
+
 object Player {
     enum class Status { ERROR, LOADING, PLAYING, STANDBY }
 
@@ -48,6 +54,10 @@ object Player {
     val trackProperty: ReadOnlyObjectProperty<Track> = _trackProperty.readOnlyProperty
     val track: Track
         get() = trackProperty.get()
+
+    val volumeProperty: DoubleProperty = SimpleDoubleProperty(this, this::volume.name, 100.0)
+    val volume: Double
+        get() = volumeProperty.get()
 
     private val endSync: SYNCPROC = object : SYNCPROC {
         override fun callback(handle: Pointer, channel: Pointer, data: Int, userData: Pointer?) {
@@ -94,6 +104,8 @@ object Player {
                             null
                         }
                         else -> {
+                            setStreamVolume(stream, volume)
+
                             LibBASS.BASS_ChannelSetSync(stream, LibBASS.BASS_SYNC_HLS_SEGMENT, 0, metaSync)
                             LibBASS.BASS_ChannelSetSync(stream, LibBASS.BASS_SYNC_META, 0, metaSync)
                             LibBASS.BASS_ChannelSetSync(stream, LibBASS.BASS_SYNC_OGG_CHANGE, 0, metaSync)
@@ -123,7 +135,7 @@ object Player {
         override fun succeeded() { _statusProperty.set(Status.PLAYING) }
     }
 
-    private val instaPauseTimer: Timer = timer(daemon = true, initialDelay = 100, period = 150) {
+    private val instaPauseTimer: Timer = timer(daemon = true, initialDelay = 100, period = 500) {
         var maybeStream: Pointer? = null
         runInFXAndWait {
             maybeStream = streamService.value
@@ -161,6 +173,8 @@ object Player {
 
     init {
         LibBASS.BASS_SetConfig(LibBASS.BASS_CONFIG_NET_PREBUF_WAIT, 0)
+
+        volumeProperty.addListener { _, _, volume -> streamService.value?.let { setStreamVolume(it, volume.toDouble()) } }
     }
 
     fun play(track: Track) {
