@@ -8,6 +8,7 @@ import com.sun.jna.Pointer
 import java.io.InputStream
 import java.nio.file.Paths
 import javafx.application.Platform
+import javafx.beans.binding.Bindings.`when` as whenever
 import javafx.event.ActionEvent
 import javafx.fxml.FXML
 import javafx.geometry.Insets
@@ -122,7 +123,14 @@ class Controller(private val stage: Stage) {
         }
         statusCol.cellValueFactory = StatusCellFactory
         trackCol.cellFactory = Callback { TrackCell() }
-        trackCol.cellValueFactory = Callback { it.value.value.nameProperty }
+        trackCol.cellValueFactory = Callback {
+            val track = it.value.value
+            whenever(
+                Player.trackProperty.isEqualTo(track).and(Player.statusMessageProperty.isNotEmpty)
+            )
+            .then(Player.statusMessageProperty)
+            .otherwise(track.nameProperty)
+        }
 
         Player.instaPauseProperty.bind(instaPause.selectedProperty())
         Player.statusProperty.addListener { _, _, newValue ->

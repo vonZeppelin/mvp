@@ -6,7 +6,7 @@ import com.sun.jna.Pointer
 import com.sun.jna.Structure
 
 interface SYNCPROC : Callback {
-    fun callback(handle: Pointer, channel: Pointer, data: Int, userData: Pointer?)
+    fun callback(handle: Int, channel: Pointer, data: Int, userData: Pointer?)
 }
 
 @Structure.FieldOrder("name", "driver", "flags")
@@ -18,11 +18,11 @@ class DeviceInfo : Structure() {
 
 object LibBASS {
     @JvmStatic external fun BASS_ChannelGetDevice(handle: Pointer): Int
-    @JvmStatic external fun BASS_ChannelGetTags(handle: Pointer, tags: Int): String
+    @JvmStatic external fun BASS_ChannelGetTags(handle: Pointer, tags: Int): Pointer?
     @JvmStatic external fun BASS_ChannelPlay(handle: Pointer, restart: Boolean): Boolean
     @JvmStatic external fun BASS_ChannelSetAttribute(handle: Pointer, attribute: Int, volume: Float)
     @JvmStatic external fun BASS_ChannelSetDevice(handle: Pointer, device: Int): Boolean
-    @JvmStatic external fun BASS_ChannelSetSync(handle: Pointer, type: Int, param: Long, proc: SYNCPROC, userData: Pointer = NULL_PTR): Pointer
+    @JvmStatic external fun BASS_ChannelSetSync(handle: Pointer, type: Int, param: Long, proc: SYNCPROC, userData: Pointer = NULL_PTR): Int
     @JvmStatic external fun BASS_ErrorGetCode(): Int
     @JvmStatic external fun BASS_Free(): Boolean
     @JvmStatic external fun BASS_GetDeviceInfo(device: Int, info: DeviceInfo): Boolean
@@ -45,11 +45,16 @@ object LibBASS {
 
     const val BASS_ATTRIB_VOL = 2
 
-    const val BASS_SYNC_HLS_SEGMENT = 0x10300
     const val BASS_SYNC_END = 2
     const val BASS_SYNC_META = 4
     const val BASS_SYNC_STALL = 6
     const val BASS_SYNC_OGG_CHANGE = 12
+
+    const val BASS_TAG_ID3 = 0
+    const val BASS_TAG_ID3V2 = 1
+    const val BASS_TAG_OGG = 2
+    const val BASS_TAG_ICY = 4
+    const val BASS_TAG_META = 5
 
     init {
         loadLibraries("bass", "bassflac", "basshls", "bassopus") { name, path ->

@@ -2,12 +2,16 @@ package mvp.audio
 
 import com.jfoenix.utils.JFXUtilities.runInFXAndWait
 import com.sun.jna.Pointer
+import java.nio.charset.Charset
+import java.util.Locale
 import java.util.Timer
 import javafx.application.Platform.runLater
 import javafx.beans.property.BooleanProperty
 import javafx.beans.property.DoubleProperty
 import javafx.beans.property.ReadOnlyObjectProperty
 import javafx.beans.property.ReadOnlyObjectWrapper
+import javafx.beans.property.ReadOnlyStringProperty
+import javafx.beans.property.ReadOnlyStringWrapper
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleDoubleProperty
 import javafx.concurrent.Service
@@ -38,6 +42,20 @@ private fun setStreamVolume(stream: Pointer, volume: Double) {
     LibBASS.BASS_ChannelSetAttribute(stream, LibBASS.BASS_ATTRIB_VOL, (volume / 100.0).toFloat())
 }
 
+private fun toStringSequence(strings: Pointer, charset: Charset = Charsets.UTF_8): Sequence<String> =
+    sequence {
+        var offset = 0L
+        while (true) {
+            val str = strings.getString(offset, charset.name())
+            if (str.isNullOrBlank()) {
+                break
+            } else {
+                yield(str)
+                offset += str.toByteArray(charset).size + 1
+            }
+        }
+    }
+
 object Player {
     enum class Status { ERROR, LOADING, PLAYING, STANDBY }
 
@@ -50,6 +68,11 @@ object Player {
     val status: Status
         get() = statusProperty.get()
 
+    private val _statusMessageProperty = ReadOnlyStringWrapper(this, this::statusMessage.name, "")
+    val statusMessageProperty: ReadOnlyStringProperty = _statusMessageProperty.readOnlyProperty
+    val statusMessage: String
+        get() = statusMessageProperty.get()
+
     private val _trackProperty = ReadOnlyObjectWrapper(this, this::track.name, UNKNOWN_TRACK)
     val trackProperty: ReadOnlyObjectProperty<Track> = _trackProperty.readOnlyProperty
     val track: Track
@@ -60,17 +83,32 @@ object Player {
         get() = volumeProperty.get()
 
     private val endSync: SYNCPROC = object : SYNCPROC {
-        override fun callback(handle: Pointer, channel: Pointer, data: Int, userData: Pointer?) {
+        override fun callback(handle: Int, channel: Pointer, data: Int, userData: Pointer?) {
             runLater(::stop)
         }
     }
     private val metaSync: SYNCPROC = object : SYNCPROC {
-        override fun callback(handle: Pointer, channel: Pointer, data: Int, userData: Pointer?) {
-            println("meta")
+        override fun callback(handle: Int, channel: Pointer, data: Int, userData: Pointer?) {
+            var msg = ""
+            LibBASS.BASS_ChannelGetTags(channel, LibBASS.BASS_TAG_META)?.let { meta ->
+                // metadata is a string
+                msg = meta.getString(0, Charsets.UTF_8.name())
+                    .substringAfter("StreamTitle='")
+                    .substringBefore("';")
+            }
+            LibBASS.BASS_ChannelGetTags(channel, LibBASS.BASS_TAG_OGG)?.let { comments ->
+                // OGG comments is a series of null-terminated UTF-8 strings
+                val tags = toStringSequence(comments)
+                    .mapNotNull { comment -> comment.split("=", limit = 2).takeIf { it.size == 2 } }
+                    .associateBy({ it[0].toLowerCase(Locale.ENGLISH) }, { it[1] })
+                msg = listOfNotNull(tags["artist"], tags["title"]).joinToString(" - ")
+            }
+
+            runLater { _statusMessageProperty.set(msg) }
         }
     }
     private val stallSync: SYNCPROC = object : SYNCPROC {
-        override fun callback(handle: Pointer, channel: Pointer, data: Int, userData: Pointer?) {
+        override fun callback(handle: Int, channel: Pointer, data: Int, userData: Pointer?) {
             val newStatus = when (data) {
                 0 -> Status.LOADING
                 1 -> Status.PLAYING
@@ -106,7 +144,6 @@ object Player {
                         else -> {
                             setStreamVolume(stream, volume)
 
-                            LibBASS.BASS_ChannelSetSync(stream, LibBASS.BASS_SYNC_HLS_SEGMENT, 0, metaSync)
                             LibBASS.BASS_ChannelSetSync(stream, LibBASS.BASS_SYNC_META, 0, metaSync)
                             LibBASS.BASS_ChannelSetSync(stream, LibBASS.BASS_SYNC_OGG_CHANGE, 0, metaSync)
                             LibBASS.BASS_ChannelSetSync(stream, LibBASS.BASS_SYNC_END, 0, endSync)
@@ -124,15 +161,29 @@ object Player {
             }
         }
 
-        override fun cancelled() { _statusProperty.set(Status.STANDBY) }
+        override fun cancelled() {
+            ready()
+        }
 
-        override fun failed() { _statusProperty.set(Status.ERROR) }
+        override fun failed() {
+            _statusProperty.set(Status.ERROR)
+            _statusMessageProperty.set(exception.message)
+        }
 
-        override fun ready() { _statusProperty.set(Status.STANDBY) }
+        override fun ready() {
+            _statusProperty.set(Status.STANDBY)
+            _statusMessageProperty.set("")
+        }
 
-        override fun running() { _statusProperty.set(Status.LOADING) }
+        override fun running() {
+            _statusProperty.set(Status.LOADING)
+            _statusMessageProperty.set("")
+        }
 
-        override fun succeeded() { _statusProperty.set(Status.PLAYING) }
+        override fun succeeded() {
+            _statusProperty.set(Status.PLAYING)
+            _statusMessageProperty.set("")
+        }
     }
 
     private val instaPauseTimer: Timer = timer(daemon = true, initialDelay = 100, period = 500) {
@@ -143,8 +194,7 @@ object Player {
         val stream = maybeStream ?: return@timer
 
         val currentDevice = Device.getDevice(stream) ?: return@timer
-        val defaultDevice = (1..Int.MAX_VALUE)
-            .asSequence()
+        val defaultDevice = generateSequence(1, Int::inc)
             .mapNotNull(Device.Utils::getDevice)
             .find { it.flags and LibBASS.BASS_DEVICE_DEFAULT != 0 }
             ?: return@timer
