@@ -28,7 +28,7 @@ fun loadLibraries(vararg libraries: String, block: (String, Path) -> Unit) {
             }
             val libraryPath = tempDir.resolve(libraryResource)
 
-            NativeLibrary::class.java.getResourceAsStream("/libs/$libraryResource").use {
+            block.javaClass.getResourceAsStream("/libs/$libraryResource").use {
                 Files.copy(it, libraryPath)
             }
             NativeLibrary.addSearchPath(library, tempDir.toString())
@@ -36,7 +36,7 @@ fun loadLibraries(vararg libraries: String, block: (String, Path) -> Unit) {
 
             libraryPath
         }
-        // delete all files once they're loaded, won't work on Win
+        // delete all files once they're loaded, won't work on Win 🤷
         .forEach(Files::delete)
     // delete the temp dir as it's empty by now
     Files.delete(tempDir)
