@@ -2,6 +2,7 @@ package mvp.audio
 
 import com.jfoenix.utils.JFXUtilities.runInFXAndWait
 import com.sun.jna.Pointer
+import com.sun.jna.ptr.FloatByReference
 import java.nio.charset.Charset
 import java.util.Locale
 import java.util.Timer
@@ -17,10 +18,12 @@ import javafx.beans.property.SimpleDoubleProperty
 import javafx.concurrent.Service
 import javafx.concurrent.Task
 import kotlin.concurrent.timer
+import mvp.nativelibs.ChannelInfo
 import mvp.nativelibs.DeviceInfo
 import mvp.nativelibs.LibBASS
 import mvp.nativelibs.NULL_PTR
 import mvp.nativelibs.SYNCPROC
+import mvp.nativelibs.TagCACodec
 
 private const val OUTPUT_SAMPLE_RATE = 48000
 
@@ -55,6 +58,8 @@ private fun toStringSequence(strings: Pointer, charset: Charset = Charsets.UTF_8
             }
         }
     }
+
+data class TrackInfo(val codec: String, val bitrate: Int)
 
 object Player {
     enum class Status { ERROR, LOADING, PLAYING, STANDBY }
@@ -118,10 +123,10 @@ object Player {
         }
     }
 
-    private val streamService: Service<Pointer> = object : Service<Pointer>() {
-        override fun createTask(): Task<Pointer> {
+    private val streamService: Service<Pointer?> = object : Service<Pointer?>() {
+        override fun createTask(): Task<Pointer?> {
             val trackUrl = track.url
-            return object : Task<Pointer>() {
+            return object : Task<Pointer?>() {
                 override fun call(): Pointer? {
                     check(LibBASS.BASS_Init(-1, OUTPUT_SAMPLE_RATE, 0)) {
                         "Couldn't init output device, error code ${LibBASS.BASS_ErrorGetCode()}"
@@ -241,6 +246,41 @@ object Player {
         LibBASS.BASS_Free()
         streamService.reset()
     }
+
+    fun trackInfo(): TrackInfo? =
+        streamService.value?.let { stream ->
+            val codec = ChannelInfo()
+                .takeIf { LibBASS.BASS_ChannelGetInfo(stream, it) }
+                ?.let {
+                    when (it.ctype) {
+                        LibBASS.BASS_CTYPE_STREAM_OGG -> "Ogg"
+                        LibBASS.BASS_CTYPE_STREAM_MP3 -> "MP3"
+                        LibBASS.BASS_CTYPE_STREAM_OPUS -> "Opus"
+                        LibBASS.BASS_CTYPE_STREAM_FLAC, LibBASS.BASS_CTYPE_STREAM_FLAC_OGG -> "FLAC"
+                        LibBASS.BASS_CTYPE_STREAM_CA ->
+                            // CoreAudio codec
+                            LibBASS.BASS_ChannelGetTags(stream, LibBASS.BASS_TAG_CA_CODEC)
+                                ?.let { tags ->
+                                    val codec = TagCACodec(tags)
+                                    // https://github.com/mono/maccore/blob/b3c18aa88c/src/AudioToolbox/AudioType.cs#L43
+                                    when (codec.atype) {
+                                        0x61616320 -> "AAC"
+                                        0x2e6d7033 -> "MP3"
+                                        0x61616368 -> "AAC+"
+                                        0x61616370 -> "eAAC+"
+                                        else -> null
+                                    }
+                                }
+                        else -> null
+                    }
+                }
+                ?: return null
+            val bitrate = FloatByReference()
+                .takeIf { LibBASS.BASS_ChannelGetAttribute(stream, LibBASS.BASS_ATTRIB_BITRATE, it) }
+                ?.value
+                ?: return null
+            return TrackInfo(codec, bitrate.toInt())
+        }
 
     fun destroy() {
         stop()

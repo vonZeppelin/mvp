@@ -9,6 +9,7 @@
 .root {
     -fx-background-insets: 5px;
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 10, .5, 2, 2);
+    -fx-spacing: 5px;
 }
 
 .track-table-cell {

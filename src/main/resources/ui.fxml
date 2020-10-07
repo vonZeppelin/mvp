@@ -4,17 +4,19 @@
 <?import com.jfoenix.controls.JFXSlider?>
 <?import com.jfoenix.controls.JFXTreeTableView?>
 <?import com.jfoenix.controls.JFXTreeTableColumn?>
+<?import java.net.URL?>
 <?import javafx.scene.control.CheckMenuItem?>
 <?import javafx.scene.control.ContextMenu?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.SeparatorMenuItem?>
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
 <?import mvp.ui.ControllerKt?>
 <?import mvp.ui.Spectrum?>
+<?import mvp.ui.TrackInfo?>
 
-<StackPane stylesheets="@ui.css" xmlns:fx="http://javafx.com/fxml" fx:controller="mvp.ui.Controller">
+<VBox xmlns:fx="http://javafx.com/fxml" fx:controller="mvp.ui.Controller">
     <fx:define>
         <ContextMenu fx:id="appMenu">
             <items>
@@ -34,34 +36,30 @@
     <padding>
         <ControllerKt fx:constant="ROOT_PADDING"/>
     </padding>
+    <stylesheets>
+        <URL value="@ui.css"/>
+    </stylesheets>
 
-    <BorderPane>
-        <top>
-            <BorderPane>
-                <center>
-                    <Spectrum fx:id="spectrum"/>
-                </center>
-                <right>
-                    <JFXButton disableVisualFocus="true" onAction="#showAppMenu" text="⋮"/>
-                </right>
-                <bottom>
-                    <JFXSlider fx:id="volume" value="100"/>
-                </bottom>
-            </BorderPane>
-        </top>
-        <center>
-            <JFXTreeTableView fx:id="playlist" editable="true" showRoot="false">
-                <columns>
-                    <JFXTreeTableColumn fx:id="statusCol" contextMenu="$null" minWidth="30" maxWidth="30" resizable="false" sortable="false"/>
-                    <JFXTreeTableColumn fx:id="trackCol" contextMenu="$null" sortable="false" text="Track"/>
-                </columns>
-                <columnResizePolicy>
-                    <JFXTreeTableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
-                </columnResizePolicy>
-                <placeholder>
-                    <Label>Add or import some ♫ via app menu</Label>
-                </placeholder>
-            </JFXTreeTableView>
-        </center>
-    </BorderPane>
-</StackPane>
+    <HBox>
+        <Spectrum HBox.hgrow="ALWAYS"/>
+        <JFXButton onAction="#showAppMenu" text="⋮"/>
+    </HBox>
+
+    <HBox viewOrder="1">
+        <JFXSlider fx:id="volume" indicatorPosition="RIGHT" value="100" HBox.hgrow="ALWAYS"/>
+        <TrackInfo prefWidth="95"/>
+    </HBox>
+
+    <JFXTreeTableView fx:id="playlist" editable="true" showRoot="false" viewOrder="10" VBox.vgrow="ALWAYS">
+        <columns>
+            <JFXTreeTableColumn fx:id="statusCol" contextMenu="$null" minWidth="30" maxWidth="30" resizable="false" sortable="false"/>
+            <JFXTreeTableColumn fx:id="trackCol" contextMenu="$null" sortable="false" text="Track"/>
+        </columns>
+        <columnResizePolicy>
+            <JFXTreeTableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+        </columnResizePolicy>
+        <placeholder>
+            <Label>Add or import some ♫ via app menu</Label>
+        </placeholder>
+    </JFXTreeTableView>
+</VBox>
