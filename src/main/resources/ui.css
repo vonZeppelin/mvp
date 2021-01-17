@@ -12,15 +12,19 @@
     -fx-spacing: 5px;
 }
 
-.track-table-cell {
+.track-table-cell HBox {
+    -fx-spacing: 10px;
+}
+
+.track-table-editor {
     -fx-spacing: 5px;
 }
 
-.track-table-cell .error-label {
+.track-table-editor .error-label {
     visibility: hidden;
 }
 
-.track-table-cell .text-field {
+.track-table-editor .text-field {
     -fx-background-position: 0.333333em 50%;
     -fx-background-repeat: no-repeat;
     -fx-background-size: 1.25em 1.25em;

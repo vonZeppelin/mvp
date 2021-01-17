@@ -22,6 +22,8 @@ import javafx.scene.control.Slider
 import javafx.scene.control.TreeItem
 import javafx.scene.control.TreeTableColumn
 import javafx.scene.control.TreeTableView
+import javafx.scene.input.KeyCode
+import javafx.scene.input.KeyEvent
 import javafx.scene.layout.Region
 import javafx.scene.shape.Polygon
 import javafx.scene.shape.Rectangle
@@ -91,11 +93,6 @@ class Controller(private val stage: Stage) {
         playlist.refresh()
     }
 
-    @FXML fun editTrack() {
-        val selectedCell = playlist.selectionModel.selectedCells.single()
-        playlist.edit(selectedCell.row, selectedCell.tableColumn)
-    }
-
     @FXML fun exitApp() {
         Player.destroy()
         statusBar.destroy()
@@ -116,6 +113,12 @@ class Controller(private val stage: Stage) {
     }
 
     @FXML fun initialize() {
+        // hide track controls on Escape
+        playlist.addEventHandler(KeyEvent.KEY_PRESSED) { event ->
+            if (event.code == KeyCode.ESCAPE && playlist.editingCell == null) {
+                playlist.selectionModel.clearSelection()
+            }
+        }
         playlist.root = TreeItem<Track>().apply {
             if (mvpPlaylist.exists()) {
                 children += readM3U(mvpPlaylist).map(::TreeItem)
@@ -125,18 +128,16 @@ class Controller(private val stage: Stage) {
         trackCol.cellFactory = Callback { TrackCell() }
         trackCol.cellValueFactory = Callback {
             val track = it.value.value
-            whenever(
-                Player.trackProperty.isEqualTo(track).and(Player.statusMessageProperty.isNotEmpty)
-            )
-            .then(Player.statusMessageProperty)
-            .otherwise(track.nameProperty)
+            whenever(Player.trackProperty.isEqualTo(track).and(Player.statusMessageProperty.isNotEmpty))
+                .then(Player.statusMessageProperty)
+                .otherwise(track.nameProperty)
         }
 
         Player.instaPauseProperty.bind(instaPause.selectedProperty())
         Player.statusProperty.addListener { _, _, newValue ->
             val newIcon = when (newValue) {
-                Status.LOADING, Status.PLAYING -> "stop.png"
-                Status.ERROR, Status.STANDBY -> "play.png"
+                Status.LOADING, Status.PLAYING -> "stop"
+                Status.ERROR, Status.STANDBY -> "play"
                 else -> return@addListener
             }
             statusBar.updateIcon(PLAY_ICON_ID, loadIcon(newIcon))
@@ -168,16 +169,14 @@ class Controller(private val stage: Stage) {
 
     private fun showTrayIcons(showAuxIcons: Boolean = false) {
         if (showAuxIcons) {
-            statusBar.addIcon(NEXT_ICON_ID, loadIcon("next.png"))
+            statusBar.addIcon(NEXT_ICON_ID, loadIcon("next"))
         }
         statusBar.addIcon(
             PLAY_ICON_ID,
-            loadIcon(
-                if (Player.status == Status.PLAYING) "stop.png" else "play.png"
-            )
+            loadIcon(if (Player.status == Status.PLAYING) "stop" else "play")
         )
         if (showAuxIcons) {
-            statusBar.addIcon(PREVIOUS_ICON_ID, loadIcon("previous.png"))
+            statusBar.addIcon(PREVIOUS_ICON_ID, loadIcon("previous"))
         }
     }
 
@@ -215,11 +214,11 @@ class Controller(private val stage: Stage) {
     }
 }
 
-private fun loadIcon(iconPath: String): ByteArray =
-    Controller::class.java.getResourceAsStream("/images/$iconPath").use(InputStream::readBytes)
+private fun loadIcon(icon: String): ByteArray =
+    Controller::class.java.getResourceAsStream("/images/$icon.png").use(InputStream::readBytes)
 
 private const val NEXT_ICON_ID = "next"
 private const val PLAY_ICON_ID = "play/stop"
 private const val PREVIOUS_ICON_ID = "previous"
-private const val ABOUT_APP = "Minimal Viable Player - lives in the taskbar and plays streaming audio.\n\n\u00a9 2020, Leonid Bogdanov"
+private const val ABOUT_APP = "Minimal Viable Player - lives in the taskbar and plays streaming audio.\n\n\u00a9 2021, Leonid Bogdanov"
 private val mvpPlaylist = Paths.get(System.getProperty("user.home"), "mvp.m3u8").toFile()

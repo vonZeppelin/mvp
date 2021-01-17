@@ -7,18 +7,17 @@ import com.jfoenix.controls.cells.editors.base.GenericEditableTreeTableCell
 import com.jfoenix.validation.RequiredFieldValidator
 import com.jfoenix.validation.base.ValidatorBase
 import java.net.URI
-import java.util.concurrent.Callable
 import javafx.application.Platform.runLater
-import javafx.beans.binding.Bindings
+import javafx.beans.binding.Bindings.createObjectBinding
+import javafx.beans.binding.Bindings.`when` as whenever
 import javafx.beans.value.ChangeListener
 import javafx.beans.value.ObservableValue
 import javafx.event.EventHandler
-import javafx.geometry.Pos
 import javafx.scene.Node
+import javafx.scene.control.ContentDisplay
 import javafx.scene.control.Label
 import javafx.scene.control.TextInputControl
 import javafx.scene.control.TreeTableColumn.CellDataFeatures
-import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.input.KeyEvent
 import javafx.scene.layout.HBox
@@ -30,14 +29,20 @@ import mvp.audio.Player
 import mvp.audio.Player.Status
 import mvp.audio.Track
 
+private fun loadImage(image: String): ImageView =
+    ImageView("/images/$image.png").apply {
+        fitHeight = 21.0
+        fitWidth = 21.0
+    }
+
 val StatusCellFactory = Callback<CellDataFeatures<Track, out Node>, ObservableValue<out Node?>> { cellDataFeatures ->
-    Bindings.createObjectBinding(
-        Callable {
+    createObjectBinding(
+        {
             when {
                 cellDataFeatures.value.value != Player.track -> null
-                Player.status == Status.ERROR -> ImageView("/images/error.png")
-                Player.status == Status.LOADING -> ImageView("/images/loading.png")
-                Player.status == Status.PLAYING -> ImageView("/images/play-cell.png")
+                Player.status == Status.ERROR -> loadImage("error")
+                Player.status == Status.LOADING -> loadImage("loading")
+                Player.status == Status.PLAYING -> loadImage("play-cell")
                 else -> null
             }
         },
@@ -70,11 +75,11 @@ class TrackCell : GenericEditableTreeTableCell<Track, String>(null) {
 
             return VBox(nameField, urlField).apply {
                 focusedProperty().addListener(focusChangeListener)
-                onKeyPressed = EventHandler { event ->
+                setOnKeyPressed { event ->
                     // runLater() required for edit commit?
                     runLater { keyEventsHandler.handle(event) }
                 }
-                styleClass += "track-table-cell"
+                styleClass += "track-table-editor"
             }
         }
 
@@ -124,27 +129,54 @@ class TrackCell : GenericEditableTreeTableCell<Track, String>(null) {
 
     init {
         builder = TrackEditorBuilder()
+        styleClass += "track-table-cell"
     }
 
     override fun getValue(): Any {
-        val deleteButton = JFXButton(null, ImageView(deleteIcon)).apply {
-            isDisableVisualFocus = true
-            onAction = EventHandler {
-                treeTableView.root.children -= treeTableRow.treeItem
-                treeTableView.refresh()
+        val controlsPanel = HBox(
+            // play/stop button
+            JFXButton().apply {
+                val track = treeTableRow.item
+                val isPlayingThisTrack = Player.trackProperty.isEqualTo(track).and(Player.statusProperty.isEqualTo(Status.PLAYING))
+                graphicProperty().bind(
+                    whenever(isPlayingThisTrack)
+                        .then(loadImage("stop"))
+                        .otherwise(loadImage("play"))
+                )
+                textProperty().bind(
+                    whenever(isPlayingThisTrack)
+                        .then("Stop")
+                        .otherwise("Play")
+                )
+                setOnAction { if (isPlayingThisTrack.value) Player.stop() else Player.play(track) }
+            },
+            // edit button
+            JFXButton("Edit", loadImage("edit")).apply {
+                setOnAction { treeTableView.edit(treeTableRow.index, tableColumn) }
+            },
+            // horizontal glue
+            Region().apply { HBox.setHgrow(this, Priority.ALWAYS) },
+            // delete button
+            JFXButton("Delete", loadImage("delete")).apply {
+                setOnAction {
+                    treeTableView.root.children -= treeTableRow.treeItem
+                    treeTableView.selectionModel.clearSelection()
+                    treeTableView.refresh()
+                }
             }
-            visibleProperty().bind(treeTableRow.hoverProperty())
-        }
-        val spacer = Region().apply {
-            HBox.setHgrow(this, Priority.ALWAYS)
-        }
-        return HBox(Label(item), spacer, deleteButton).apply {
-            alignment = Pos.CENTER
+        )
+
+        return Label(item, controlsPanel).apply {
+            contentDisplayProperty().bind(
+                whenever(treeTableRow.selectedProperty())
+                    .then(ContentDisplay.GRAPHIC_ONLY)
+                    .otherwise(ContentDisplay.TEXT_ONLY)
+            )
+            prefWidth = Double.POSITIVE_INFINITY
         }
     }
 
     private companion object {
-        val deleteIcon = Image("/images/delete.png", 16.0, 16.0, true, false)
         val requiredFieldValidator = RequiredFieldValidator("Required field")
         val urlFieldValidator = object : ValidatorBase("Invalid URL") {
             override fun eval() {
