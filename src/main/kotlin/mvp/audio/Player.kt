@@ -193,9 +193,7 @@ object Player {
 
     private val instaPauseTimer: Timer = timer(daemon = true, initialDelay = 100, period = 500) {
         var maybeStream: Pointer? = null
-        runInFXAndWait {
-            maybeStream = streamService.value
-        }
+        runInFXAndWait { maybeStream = streamService.value }
         val stream = maybeStream ?: return@timer
 
         val currentDevice = Device.getDevice(stream) ?: return@timer
@@ -229,9 +227,14 @@ object Player {
     init {
         LibBASS.BASS_SetConfig(LibBASS.BASS_CONFIG_NET_PREBUF_WAIT, 0)
 
-        volumeProperty.addListener { _, _, volume -> streamService.value?.let { setStreamVolume(it, volume.toDouble()) } }
+        volumeProperty.addListener { _, _, volume ->
+            streamService.value?.let { setStreamVolume(it, volume.toDouble()) }
+        }
     }
 
+    /**
+     * Must be called from FX App thread.
+     */
     fun play(track: Track) {
         stop()
 
@@ -239,6 +242,9 @@ object Player {
         streamService.restart()
     }
 
+    /**
+     * Must be called from FX App thread.
+     */
     fun stop() {
         streamService.value
             ?.let(LibBASS::BASS_StreamFree)
@@ -247,8 +253,10 @@ object Player {
         streamService.reset()
     }
 
-    fun trackInfo(): TrackInfo? =
-        streamService.value?.let { stream ->
+    fun trackInfo(): TrackInfo? {
+        var maybeStream: Pointer? = null
+        runInFXAndWait { maybeStream = streamService.value }
+        return maybeStream?.let { stream ->
             val codec = ChannelInfo()
                 .takeIf { LibBASS.BASS_ChannelGetInfo(stream, it) }
                 ?.let {
@@ -281,7 +289,23 @@ object Player {
                 ?: return null
             return TrackInfo(codec, bitrate.toInt())
         }
+    }
 
+    fun spectrum(): FloatArray {
+        var maybeStream: Pointer? = null
+        runInFXAndWait {
+            maybeStream = checkNotNull(streamService.value) {
+                "Player must have ${Status.PLAYING} status, but has $status instead"
+            }
+        }
+        return FloatArray(1024).apply {
+            LibBASS.BASS_ChannelGetData(maybeStream!!, this, LibBASS.BASS_DATA_FFT2048)
+        }
+    }
+
+    /**
+     * Must be called from FX App thread.
+     */
     fun destroy() {
         stop()
         instaPauseTimer.cancel()

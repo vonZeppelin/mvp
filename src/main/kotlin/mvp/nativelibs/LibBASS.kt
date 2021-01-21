@@ -40,6 +40,7 @@ class TagCACodec(ptr: Pointer) : Structure(ptr) {
 
 object LibBASS {
     @JvmStatic external fun BASS_ChannelGetAttribute(handle: Pointer, attribute: Int, value: FloatByReference): Boolean
+    @JvmStatic external fun BASS_ChannelGetData(handle: Pointer, buffer: FloatArray, length: Int): Int
     @JvmStatic external fun BASS_ChannelGetDevice(handle: Pointer): Int
     @JvmStatic external fun BASS_ChannelGetInfo(handle: Pointer, info: ChannelInfo): Boolean
     @JvmStatic external fun BASS_ChannelGetTags(handle: Pointer, tags: Int): Pointer?
@@ -81,6 +82,8 @@ object LibBASS {
     const val BASS_SYNC_META = 4
     const val BASS_SYNC_STALL = 6
     const val BASS_SYNC_OGG_CHANGE = 12
+
+    const val BASS_DATA_FFT2048 = 0x80000003.toInt()
 
     const val BASS_TAG_ID3 = 0
     const val BASS_TAG_ID3V2 = 1
