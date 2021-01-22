@@ -6,11 +6,12 @@ import javafx.application.Platform.runLater
 import javafx.geometry.Point2D
 import kotlin.random.Random
 import mvp.nativelibs.NSApp
+import mvp.nativelibs.NSPoint
 import mvp.nativelibs.NSRect
 import mvp.nativelibs.NSSize
-import mvp.nativelibs.NULL_PTR
 import mvp.nativelibs.OBJC
 import mvp.nativelibs.autoreleasepool
+import mvp.nativelibs.asSequence
 import mvp.nativelibs.get
 import mvp.nativelibs.javaString
 import mvp.nativelibs.msgSend
@@ -53,12 +54,10 @@ class StatusBar(eventListener: EventListener) {
     private class ItemClicked(private val eventListener: EventListener) : Callback {
         fun callback(self: Pointer, cmd: Pointer, source: Pointer) {
             autoreleasepool {
-                // TODO Multi-monitor support?
-                val screenSize = "NSScreen".nsClass()
-                    .msgSend<Pointer>("mainScreen")
-                    .msgSendS("frame", NSRect())
-                    .size
-                val itemButtonLocation = source.msgSend<Pointer>("window")
+                val mouseLocation = "NSEvent".nsClass()
+                    .msgSendS("mouseLocation", NSPoint())
+                val screenFrame = "NSScreen".nsClass()
+                    .msgSend<Pointer>("screens")[0]
                     .msgSendS("frame", NSRect())
                 val buttonNumber = NSApp.msgSend<Pointer>("currentEvent")
                     .msgSend<Long>("buttonNumber")
@@ -67,10 +66,7 @@ class StatusBar(eventListener: EventListener) {
                     eventListener(
                         StatusBarEvent(
                             id = source.msgSend<Pointer>("tag").javaString(),
-                            location = Point2D(
-                                itemButtonLocation.origin.x + itemButtonLocation.size.width / 2,
-                                screenSize.height - itemButtonLocation.origin.y
-                            ),
+                            location = Point2D(mouseLocation.x, screenFrame.size.height - mouseLocation.y),
                             isRightButton = buttonNumber != 0L
                         )
                     )
@@ -176,13 +172,11 @@ class StatusBar(eventListener: EventListener) {
 
 private fun enumerateStatusItems(): Sequence<Pointer> {
     val statusBarWindowClass = "NSStatusBarWindow".nsClass()
-    val windowsEnum = NSApp
+    return NSApp
         .msgSend<Pointer>("windows")
-        .msgSend<Pointer>("objectEnumerator")
-
-    return generateSequence { windowsEnum.msgSend<Pointer>("nextObject").takeIf { it != NULL_PTR } }
+        .asSequence()
         .filter { it.msgSend("isKindOfClass:", statusBarWindowClass) }
-        .map { it.msgSend<Pointer>("statusItem") }
+        .map { it.msgSend("statusItem") }
 }
 
 private fun removeStatusItems(predicate: (Pointer) -> Boolean = { true }) {
@@ -201,7 +195,7 @@ private fun removeStatusItems(predicate: (Pointer) -> Boolean = { true }) {
 
 private fun setStatusItemIcon(item: Pointer, imageData: Pointer) {
     val statusBar = item.msgSend<Pointer>("statusBar")
-    val imageSize = statusBar.msgSend<Double>("thickness") * 0.75
+    val imageSize = statusBar.msgSend<Double>("thickness") * 0.8
     val image = "NSImage".nsClass()
         .msgSend<Pointer>("alloc")
         .msgSend<Pointer>("initWithData:", imageData)

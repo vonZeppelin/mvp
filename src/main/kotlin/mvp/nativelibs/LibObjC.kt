@@ -90,6 +90,11 @@ fun Pointer.javaString(): String = this.msgSend<Pointer>("UTF8String").getString
 
 operator fun Pointer.get(index: Int): Pointer = msgSend("objectAtIndex:", index)
 
+fun Pointer.asSequence(): Sequence<Pointer> =
+    msgSend<Pointer>("objectEnumerator").let { enum ->
+        generateSequence { enum.msgSend<Pointer>("nextObject").takeIf { it != NULL_PTR } }
+    }
+
 fun nsArrayOf(vararg args: Pointer): Pointer {
     val nsArrayClass = "NSArray".nsClass()
     return if (args.isEmpty()) {
