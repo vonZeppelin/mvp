@@ -35,7 +35,7 @@ val OBJC: ObjC = Native.load(
 )
 
 val NSApp: Pointer
-    get() = "NSApplication".nsClass().msgSend("sharedApplication")
+    get() = "NSApplication".nsClass().msgSend<Pointer>("sharedApplication")
 
 fun String.nsClass(): Pointer = OBJC.objc_getClass(this)
 
@@ -50,7 +50,7 @@ inline fun <reified T> Pointer.msgSend(sel: String, vararg args: Any?): T =
         else -> throw UnsupportedOperationException("Unsupported return type $clazz")
     }
 
-fun <T: Structure> Pointer.msgSendS(sel: String, ret: T): T {
+inline fun <reified T: Structure> Pointer.msgSend(sel: String): T {
     val selector = sel.nsSelector()
     val thisClass = this.msgSend<Pointer>("class")
     val nsInvocation = "NSInvocation".nsClass()
@@ -64,7 +64,8 @@ fun <T: Structure> Pointer.msgSendS(sel: String, ret: T): T {
         )
     nsInvocation.msgSend<Pointer>("setSelector:", selector)
     nsInvocation.msgSend<Pointer>("invokeWithTarget:", this)
-    return ret.apply {
+    // structure has to have default ctor!
+    return T::class.java.getDeclaredConstructor().newInstance().apply {
         nsInvocation.msgSend<Pointer>("getReturnValue:", this)
     }
 }

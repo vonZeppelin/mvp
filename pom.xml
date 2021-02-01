@@ -13,7 +13,7 @@
   <properties>
     <javafx.version>15.0.1</javafx.version>
     <jna.version>5.6.0</jna.version>
-    <kotlin.version>1.4.21</kotlin.version>
+    <kotlin.version>1.4.30</kotlin.version>
 
     <mainClass>mvp.AppKt</mainClass>
 
@@ -59,29 +59,11 @@
   <build>
     <plugins>
       <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.8.1</version>
-        <executions>
-          <execution>
-            <id>default-compile</id>
-            <phase>none</phase>
-          </execution>
-          <execution>
-            <id>java-compile</id>
-            <phase>compile</phase>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <groupId>org.jetbrains.kotlin</groupId>
         <artifactId>kotlin-maven-plugin</artifactId>
         <version>${kotlin.version}</version>
         <executions>
           <execution>
-            <phase>process-sources</phase>
             <goals>
               <goal>compile</goal>
             </goals>
@@ -93,6 +75,27 @@
             <sourceDirectory>src/main/kotlin</sourceDirectory>
           </sourceDirs>
         </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.8.1</version>
+        <executions>
+          <execution>
+            <id>default-compile</id>
+            <phase>none</phase>
+          </execution>
+          <execution>
+            <id>default-testCompile</id>
+            <phase>none</phase>
+          </execution>
+          <execution>
+            <id>java-compile</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.moditect</groupId>

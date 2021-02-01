@@ -15,7 +15,6 @@ import mvp.nativelibs.asSequence
 import mvp.nativelibs.get
 import mvp.nativelibs.javaString
 import mvp.nativelibs.msgSend
-import mvp.nativelibs.msgSendS
 import mvp.nativelibs.nsArrayOf
 import mvp.nativelibs.nsClass
 import mvp.nativelibs.nsSelector
@@ -55,10 +54,10 @@ class StatusBar(eventListener: EventListener) {
         fun callback(self: Pointer, cmd: Pointer, source: Pointer) {
             autoreleasepool {
                 val mouseLocation = "NSEvent".nsClass()
-                    .msgSendS("mouseLocation", NSPoint())
+                    .msgSend<NSPoint>("mouseLocation")
                 val screenFrame = "NSScreen".nsClass()
                     .msgSend<Pointer>("screens")[0]
-                    .msgSendS("frame", NSRect())
+                    .msgSend<NSRect>("frame")
                 val buttonNumber = NSApp.msgSend<Pointer>("currentEvent")
                     .msgSend<Long>("buttonNumber")
 
@@ -176,7 +175,7 @@ private fun enumerateStatusItems(): Sequence<Pointer> {
         .msgSend<Pointer>("windows")
         .asSequence()
         .filter { it.msgSend("isKindOfClass:", statusBarWindowClass) }
-        .map { it.msgSend("statusItem") }
+        .map { it.msgSend<Pointer>("statusItem") }
 }
 
 private fun removeStatusItems(predicate: (Pointer) -> Boolean = { true }) {
