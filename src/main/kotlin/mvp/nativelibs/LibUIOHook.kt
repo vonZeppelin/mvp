@@ -61,11 +61,11 @@ class UIOHookEvent : Structure() {
     }
 }
 
-interface LoggerProc : Callback {
+fun interface LoggerProc : Callback {
     fun callback(level: Int, message: String, args: Pointer): Boolean
 }
 
-interface DispatchProc : Callback {
+fun interface DispatchProc : Callback {
     fun callback(event: UIOHookEvent)
 }
 
@@ -75,9 +75,7 @@ object LibUIOHook {
     @JvmStatic external fun hook_set_logger_proc(proc: LoggerProc)
     @JvmStatic external fun hook_stop(): Int
 
-    val NOOP_LOGGER: LoggerProc = object : LoggerProc {
-        override fun callback(level: Int, message: String, args: Pointer): Boolean = true
-    }
+    val NOOP_LOGGER: LoggerProc = LoggerProc { _, _, _ -> true }
 
     init {
         loadLibraries("uiohook") { name, _ -> Native.register(name) }

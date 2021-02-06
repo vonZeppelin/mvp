@@ -87,40 +87,32 @@ object Player {
     val volume: Double
         get() = volumeProperty.get()
 
-    private val endSync: SYNCPROC = object : SYNCPROC {
-        override fun callback(handle: Int, channel: Pointer, data: Int, userData: Pointer?) {
-            runLater(::stop)
+    private val endSync: SYNCPROC = SYNCPROC { _, _, _, _ -> runLater(::stop) }
+    private val metaSync: SYNCPROC = SYNCPROC { _, channel, _, _ ->
+        var msg = ""
+        LibBASS.BASS_ChannelGetTags(channel, LibBASS.BASS_TAG_META)?.let { meta ->
+            // metadata is a string
+            msg = meta.getString(0, Charsets.UTF_8.name())
+                .substringAfter("StreamTitle='")
+                .substringBefore("';")
         }
-    }
-    private val metaSync: SYNCPROC = object : SYNCPROC {
-        override fun callback(handle: Int, channel: Pointer, data: Int, userData: Pointer?) {
-            var msg = ""
-            LibBASS.BASS_ChannelGetTags(channel, LibBASS.BASS_TAG_META)?.let { meta ->
-                // metadata is a string
-                msg = meta.getString(0, Charsets.UTF_8.name())
-                    .substringAfter("StreamTitle='")
-                    .substringBefore("';")
-            }
-            LibBASS.BASS_ChannelGetTags(channel, LibBASS.BASS_TAG_OGG)?.let { comments ->
-                // OGG comments is a series of null-terminated UTF-8 strings
-                val tags = toStringSequence(comments)
-                    .mapNotNull { comment -> comment.split("=", limit = 2).takeIf { it.size == 2 } }
-                    .associateBy({ it[0].toLowerCase(Locale.ENGLISH) }, { it[1] })
-                msg = listOfNotNull(tags["artist"], tags["title"]).joinToString(" - ")
-            }
+        LibBASS.BASS_ChannelGetTags(channel, LibBASS.BASS_TAG_OGG)?.let { comments ->
+            // OGG comments is a series of null-terminated UTF-8 strings
+            val tags = toStringSequence(comments)
+                .mapNotNull { comment -> comment.split("=", limit = 2).takeIf { it.size == 2 } }
+                .associateBy({ it[0].toLowerCase(Locale.ENGLISH) }, { it[1] })
+            msg = listOfNotNull(tags["artist"], tags["title"]).joinToString(" - ")
+        }
 
-            runLater { _statusMessageProperty.set(msg) }
-        }
+        runLater { _statusMessageProperty.set(msg) }
     }
-    private val stallSync: SYNCPROC = object : SYNCPROC {
-        override fun callback(handle: Int, channel: Pointer, data: Int, userData: Pointer?) {
-            val newStatus = when (data) {
-                0 -> Status.LOADING
-                1 -> Status.PLAYING
-                else -> return
-            }
-            runLater { _statusProperty.set(newStatus) }
+    private val stallSync: SYNCPROC = SYNCPROC { _, _, data, _ ->
+        val newStatus = when (data) {
+            0 -> Status.LOADING
+            1 -> Status.PLAYING
+            else -> return@SYNCPROC
         }
+        runLater { _statusProperty.set(newStatus) }
     }
 
     private val streamService: Service<Pointer?> = object : Service<Pointer?>() {

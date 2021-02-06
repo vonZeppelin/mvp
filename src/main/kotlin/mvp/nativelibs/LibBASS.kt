@@ -6,7 +6,7 @@ import com.sun.jna.Pointer
 import com.sun.jna.Structure
 import com.sun.jna.ptr.FloatByReference
 
-interface SYNCPROC : Callback {
+fun interface SYNCPROC : Callback {
     fun callback(handle: Int, channel: Pointer, data: Int, userData: Pointer?)
 }
 

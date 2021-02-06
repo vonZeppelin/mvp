@@ -15,19 +15,16 @@ import mvp.nativelibs.EVENT_KEY_RELEASED
 import mvp.nativelibs.EVENT_MOUSE_PRESSED
 import mvp.nativelibs.EventData
 import mvp.nativelibs.LibUIOHook
-import mvp.nativelibs.UIOHookEvent
 import mvp.nativelibs.VC_MEDIA_NEXT
 import mvp.nativelibs.VC_MEDIA_PLAY
 import mvp.nativelibs.VC_MEDIA_PREVIOUS
 import mvp.ui.Controller
 
 class UIHooks(private val stage: Stage, private val controller: Controller) {
-    private val uiHookDispatch: DispatchProc = object : DispatchProc {
-        override fun callback(event: UIOHookEvent) {
-            when (event.eventType) {
-                EVENT_MOUSE_PRESSED -> maybeHideStage(event.data.mouse)
-                EVENT_KEY_RELEASED -> handleMediaKeys(event.data.keyboard)
-            }
+    private val uiHookDispatch: DispatchProc = DispatchProc { event ->
+        when (event.eventType) {
+            EVENT_MOUSE_PRESSED -> maybeHideStage(event.data.mouse)
+            EVENT_KEY_RELEASED -> handleMediaKeys(event.data.keyboard)
         }
     }
 
