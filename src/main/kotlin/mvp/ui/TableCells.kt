@@ -104,6 +104,7 @@ class TrackCell : GenericEditableTreeTableCell<Track, String>(null) {
         }
 
         override fun cancelEdit() {
+            treeTableView.isEditable = false
             treeTableView.refresh()
         }
 
@@ -120,6 +121,7 @@ class TrackCell : GenericEditableTreeTableCell<Track, String>(null) {
         override fun nullEditorNode() {
             nameField = null
             urlField = null
+            treeTableView.isEditable = false
         }
 
         override fun updateItem(item: Any?, empty: Boolean) {
@@ -152,7 +154,12 @@ class TrackCell : GenericEditableTreeTableCell<Track, String>(null) {
             },
             // edit button
             JFXButton("Edit", loadImage("edit")).apply {
-                setOnAction { treeTableView.edit(treeTableRow.index, tableColumn) }
+                setOnAction {
+                    // workaround for annoying default behaviour of editable (Tree)TableView:
+                    // enable its editing on button click (edit start) and disable on edit cancel/commit
+                    treeTableView.isEditable = true
+                    treeTableView.edit(treeTableRow.index, tableColumn)
+                }
             },
             // horizontal glue
             Region().apply { HBox.setHgrow(this, Priority.ALWAYS) },

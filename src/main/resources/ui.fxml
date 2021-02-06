@@ -50,7 +50,7 @@
         <TrackInfo prefWidth="95"/>
     </HBox>
 
-    <JFXTreeTableView fx:id="playlist" editable="true" showRoot="false" viewOrder="10" VBox.vgrow="ALWAYS">
+    <JFXTreeTableView fx:id="playlist" showRoot="false" viewOrder="10" VBox.vgrow="ALWAYS">
         <columns>
             <JFXTreeTableColumn fx:id="statusCol" contextMenu="$null" minWidth="30" maxWidth="30" resizable="false" sortable="false"/>
             <JFXTreeTableColumn fx:id="trackCol" contextMenu="$null" sortable="false" text="Track"/>
