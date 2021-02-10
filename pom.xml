@@ -12,7 +12,6 @@
 
   <properties>
     <javafx.version>15.0.1</javafx.version>
-    <jna.version>5.6.0</jna.version>
     <kotlin.version>1.4.30</kotlin.version>
 
     <mainClass>mvp.AppKt</mainClass>
@@ -31,7 +30,8 @@
     <dependency>
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna</artifactId>
-      <version>${jna.version}</version>
+      <version>5.7.0</version>
+      <classifier>jpms</classifier>
     </dependency>
     <dependency>
       <groupId>org.jetbrains.kotlin</groupId>
@@ -94,45 +94,6 @@
             <goals>
               <goal>compile</goal>
             </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.moditect</groupId>
-        <artifactId>moditect-maven-plugin</artifactId>
-        <version>1.0.0.RC1</version>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>add-module-info</goal>
-            </goals>
-            <configuration>
-              <overwriteExistingFiles>true</overwriteExistingFiles>
-              <outputDirectory>${project.build.directory}/modules</outputDirectory>
-              <modules>
-                <!-- JNA 5.7 will introduce JPMS support -->
-                <module>
-                  <artifact>
-                    <groupId>net.java.dev.jna</groupId>
-                    <artifactId>jna</artifactId>
-                    <version>${jna.version}</version>
-                  </artifact>
-                  <moduleInfoSource>
-                    module com.sun.jna {
-                      exports com.sun.jna;
-                      exports com.sun.jna.ptr;
-                      exports com.sun.jna.win32;
-
-                      requires java.desktop;
-                      requires java.logging;
-
-                      opens com.sun.jna.darwin;
-                    }
-                  </moduleInfoSource>
-                </module>
-              </modules>
-            </configuration>
           </execution>
         </executions>
       </plugin>

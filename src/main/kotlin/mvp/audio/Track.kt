@@ -1,12 +1,12 @@
 package mvp.audio
 
+import java.io.File
+import java.net.URI
+import java.nio.charset.Charset.defaultCharset
 import javafx.beans.property.ObjectProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.beans.property.StringProperty
-import java.io.File
-import java.net.URI
-import java.nio.charset.Charset.defaultCharset
 
 class Track(name: String, url: URI) {
     constructor(name: String, url: String) : this(name, URI(url))
@@ -23,33 +23,22 @@ class Track(name: String, url: URI) {
         set(value) = urlProperty.set(value)
 }
 
-fun readM3U(file: File): List<Track> {
+fun readM3U(file: File): Sequence<Track> {
     val charset =
         if (file.extension.equals("m3u8", ignoreCase = true))
             Charsets.UTF_8
         else
             defaultCharset()
 
-    return file.useLines(charset) {
-        val lines = it.iterator()
-        when {
-            !lines.hasNext() -> emptyList()
-            lines.next() != M3U_HEADER -> error("$file is not a M3U playlist")
-            else -> mutableListOf<Track>().apply {
-                while (lines.hasNext()) {
-                    val line = lines.next()
-                    add(
-                        if (line.startsWith(M3U_INFO_PREFIX))
-                            Track(
-                                line.substringAfter(','),
-                                if (lines.hasNext())
-                                    lines.next()
-                                else
-                                    error("$file is not a valid M3U playlist")
-                            )
-                        else
-                            Track("Unknown track", line)
-                    )
+    return sequence {
+        file.useLines(charset) { lines ->
+            var trackTitle: String? = null
+            for (line in lines) {
+                if (!line.startsWith('#')) {
+                    yield(Track(trackTitle ?: line, line))
+                    trackTitle = null
+                } else if (line.startsWith(M3U_INFO_PREFIX)) {
+                    trackTitle = line.substringAfter(',')
                 }
             }
         }
