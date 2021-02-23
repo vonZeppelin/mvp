@@ -23,7 +23,7 @@
                 <MenuItem onAction="#addTrack" text="Add new track"/>
                 <MenuItem onAction="#openPlaylist" text="Open playlist..."/>
                 <SeparatorMenuItem/>
-                <CheckMenuItem fx:id="instaPause" selected="true" text="InstaPause"/>
+                <CheckMenuItem fx:id="instaPause" text="InstaPause"/>
                 <CheckMenuItem fx:id="showAuxIcons" text="Next/Prev buttons"/>
                 <SeparatorMenuItem/>
                 <MenuItem onAction="#aboutApp" text="About MVP"/>
@@ -46,7 +46,7 @@
     </HBox>
 
     <HBox viewOrder="1">
-        <JFXSlider fx:id="volume" indicatorPosition="RIGHT" value="100" HBox.hgrow="ALWAYS"/>
+        <JFXSlider fx:id="volume" indicatorPosition="RIGHT" HBox.hgrow="ALWAYS"/>
         <TrackInfo prefWidth="95"/>
     </HBox>
 

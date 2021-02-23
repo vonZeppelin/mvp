@@ -1,6 +1,7 @@
 module mvp {
     requires com.jfoenix;
     requires com.sun.jna;
+    requires java.prefs;
     requires javafx.controls;
     requires javafx.fxml;
     requires kotlin.stdlib;

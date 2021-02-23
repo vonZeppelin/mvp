@@ -133,7 +133,22 @@ class Controller(private val stage: Stage) {
                 .otherwise(track.nameProperty)
         }
 
-        Player.instaPauseProperty.bind(instaPause.selectedProperty())
+        with(instaPause.selectedProperty()) {
+            Player.instaPauseProperty.bind(this)
+            Settings.bind(this, "instapause", true)
+        }
+        with(showAuxIcons.selectedProperty()) {
+            Settings.bind(this, "showauxicons", false)
+            addListener { _, _, newValue ->
+                hideTrayIcons()
+                showTrayIcons(newValue)
+            }
+        }
+        with(volume.valueProperty()) {
+            Player.volumeProperty.bind(this)
+            Settings.bind(this, "volume", 100.0)
+        }
+
         Player.statusProperty.addListener { _, _, newValue ->
             val newIcon = when (newValue) {
                 Status.LOADING, Status.PLAYING -> "stop"
@@ -142,13 +157,8 @@ class Controller(private val stage: Stage) {
             }
             statusBar.updateIcon(PLAY_ICON_ID, loadIcon(newIcon))
         }
-        Player.volumeProperty.bind(volume.valueProperty())
 
-        showAuxIcons.selectedProperty().addListener { _, _, newValue ->
-            hideTrayIcons()
-            showTrayIcons(newValue)
-        }
-        showTrayIcons()
+        showTrayIcons(showAuxIcons.isSelected)
     }
 
     fun toggleTrack() {
@@ -167,7 +177,7 @@ class Controller(private val stage: Stage) {
             ?.run { Player.play(value) }
     }
 
-    private fun showTrayIcons(showAuxIcons: Boolean = false) {
+    private fun showTrayIcons(showAuxIcons: Boolean) {
         if (showAuxIcons) {
             statusBar.addIcon(NEXT_ICON_ID, loadIcon("next"))
         }
