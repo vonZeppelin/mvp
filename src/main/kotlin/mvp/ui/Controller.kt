@@ -1,9 +1,5 @@
 package mvp.ui
 
-import com.jfoenix.animation.alert.JFXAlertAnimation
-import com.jfoenix.controls.JFXAlert
-import com.jfoenix.controls.JFXButton
-import com.jfoenix.controls.JFXDialogLayout
 import com.sun.jna.Pointer
 import java.io.InputStream
 import java.nio.file.Paths
@@ -17,7 +13,6 @@ import javafx.geometry.Side
 import javafx.scene.Node
 import javafx.scene.control.CheckMenuItem
 import javafx.scene.control.ContextMenu
-import javafx.scene.control.Label
 import javafx.scene.control.Slider
 import javafx.scene.control.TreeItem
 import javafx.scene.control.TreeTableColumn
@@ -28,7 +23,6 @@ import javafx.scene.layout.Region
 import javafx.scene.shape.Polygon
 import javafx.scene.shape.Rectangle
 import javafx.scene.shape.Shape
-import javafx.scene.text.Text
 import javafx.stage.FileChooser
 import javafx.stage.Screen
 import javafx.stage.Stage
@@ -41,6 +35,7 @@ import mvp.audio.writeM3U
 import mvp.nativelibs.NSApp
 import mvp.nativelibs.javaString
 import mvp.nativelibs.msgSend
+import mvp.ui.controls.AboutDialog
 import mvp.ui.controls.StatusBar
 import mvp.ui.controls.StatusCellFactory
 import mvp.ui.controls.TrackCell
@@ -73,22 +68,7 @@ class Controller(private val stage: Stage) {
     }
 
     @FXML fun aboutApp() {
-        JFXAlert<Unit>()
-            .apply {
-                animation = JFXAlertAnimation.NO_ANIMATION
-                setContent(
-                    JFXDialogLayout().apply {
-                        setHeading(Label("About MVP"))
-                        setBody(Text(ABOUT_APP))
-                        setActions(
-                            JFXButton("Close").apply {
-                                setOnAction { close() }
-                            }
-                        )
-                    }
-                )
-            }
-            .showAndWait()
+        AboutDialog().showAndWait()
     }
 
     @FXML fun addTrack() {
@@ -233,5 +213,4 @@ private fun loadIcon(icon: String): ByteArray =
 private const val NEXT_ICON_ID = "next"
 private const val PLAY_ICON_ID = "play/stop"
 private const val PREVIOUS_ICON_ID = "previous"
-private const val ABOUT_APP = "Minimal Viable Player - lives in the taskbar and plays streaming audio.\n\n\u00a9 2021, Leonid Bogdanov"
 private val mvpPlaylist = Paths.get(System.getProperty("user.home"), "mvp.m3u8").toFile()
