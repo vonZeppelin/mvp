@@ -13,8 +13,8 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 <?import mvp.ui.ControllerKt?>
-<?import mvp.ui.Spectrum?>
-<?import mvp.ui.TrackInfo?>
+<?import mvp.ui.controls.Spectrum?>
+<?import mvp.ui.controls.TrackInfo?>
 
 <VBox xmlns:fx="http://javafx.com/fxml" fx:controller="mvp.ui.Controller">
     <fx:define>

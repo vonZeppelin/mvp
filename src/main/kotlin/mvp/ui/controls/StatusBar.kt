@@ -1,4 +1,4 @@
-package mvp.ui
+package mvp.ui.controls
 
 import com.sun.jna.Callback
 import com.sun.jna.Pointer

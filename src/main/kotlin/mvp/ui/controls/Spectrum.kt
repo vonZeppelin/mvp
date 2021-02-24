@@ -1,4 +1,4 @@
-package mvp.ui
+package mvp.ui.controls
 
 import javafx.concurrent.ScheduledService
 import javafx.concurrent.Task
