@@ -25,8 +25,6 @@ import mvp.nativelibs.NULL_PTR
 import mvp.nativelibs.SYNCPROC
 import mvp.nativelibs.TagCACodec
 
-private const val OUTPUT_SAMPLE_RATE = 48000
-
 private data class Device(val id: Int, val name: String, val flags: Int) {
     companion object Utils {
         fun getDevice(deviceId: Int): Device? =
@@ -120,7 +118,7 @@ object Player {
             val trackUrl = track.url
             return object : Task<Pointer?>() {
                 override fun call(): Pointer? {
-                    check(LibBASS.BASS_Init(-1, OUTPUT_SAMPLE_RATE, 0)) {
+                    check(LibBASS.BASS_Init(-1, -1, 0)) {
                         "Couldn't init output device, error code ${LibBASS.BASS_ErrorGetCode()}"
                     }
 
@@ -207,7 +205,7 @@ object Player {
                 }
             }
             if (reassignDevices) {
-                LibBASS.BASS_Init(defaultDevice.id, OUTPUT_SAMPLE_RATE, 0)
+                LibBASS.BASS_Init(defaultDevice.id, -1, 0)
                 LibBASS.BASS_ChannelSetDevice(stream, defaultDevice.id)
                 LibBASS.BASS_ChannelPlay(stream, true)
                 LibBASS.BASS_SetDevice(currentDevice.id)

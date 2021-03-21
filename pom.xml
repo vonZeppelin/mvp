@@ -11,8 +11,8 @@
   <name>MVP</name>
 
   <properties>
-    <javafx.version>15.0.1</javafx.version>
-    <kotlin.version>1.4.30</kotlin.version>
+    <javafx.version>16</javafx.version>
+    <kotlin.version>1.4.31</kotlin.version>
 
     <mainClass>mvp.AppKt</mainClass>
 
