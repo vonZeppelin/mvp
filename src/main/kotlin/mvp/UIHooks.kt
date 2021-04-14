@@ -77,16 +77,9 @@ class UIHooks(private val stage: Stage, private val controller: Controller) {
 
         fun debounce(key: Any, millis: Long, block: () -> Unit) {
             delayedBlocks.computeIfAbsent(key) {
-                debounceScheduler.schedule(
-                    {
-                        try {
-                            block()
-                        } finally {
-                            delayedBlocks -= it
-                        }
-                    },
-                    millis, MILLISECONDS
-                )
+                runCatching(block)
+
+                debounceScheduler.schedule({ delayedBlocks -= key }, millis, MILLISECONDS)
             }
         }
     }
