@@ -12,7 +12,7 @@
 
   <properties>
     <javafx.version>16</javafx.version>
-    <kotlin.version>1.4.31</kotlin.version>
+    <kotlin.version>1.4.32</kotlin.version>
 
     <mainClass>mvp.AppKt</mainClass>
 
@@ -29,9 +29,8 @@
     </dependency>
     <dependency>
       <groupId>net.java.dev.jna</groupId>
-      <artifactId>jna</artifactId>
-      <version>5.7.0</version>
-      <classifier>jpms</classifier>
+      <artifactId>jna-jpms</artifactId>
+      <version>5.8.0</version>
     </dependency>
     <dependency>
       <groupId>org.jetbrains.kotlin</groupId>
