@@ -34,8 +34,8 @@ fun main(args: Array<String>) {
     Application.launch(App::class.java, *args)
 }
 
-private const val SCENE_WIDTH = 350.0 + ARROW_HEIGHT * 2
-private const val SCENE_HEIGHT = 200.0 + ARROW_HEIGHT * 2
+private const val SCENE_WIDTH = 400.0 + ARROW_HEIGHT * 2
+private const val SCENE_HEIGHT = 250.0 + ARROW_HEIGHT * 2
 
 private fun <ROOT : Parent, CONTROLLER> String.loadFXML(stage: Stage): Pair<ROOT, CONTROLLER> =
     FXMLLoader(App::class.java.getResource(this))
@@ -47,4 +47,4 @@ private fun <ROOT : Parent, CONTROLLER> String.loadFXML(stage: Stage): Pair<ROOT
                 }
             }
         }
-        .let { it.load<ROOT>() to it.getController<CONTROLLER>() }
+        .let { it.load<ROOT>() to it.getController() }

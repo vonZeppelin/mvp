@@ -11,7 +11,7 @@ import kotlin.math.log2
 import kotlin.math.pow
 import kotlin.math.sqrt
 
-private const val BANDS_COUNT = 25
+private const val BANDS_COUNT = 50
 private const val BAND_GAP = 2
 
 class Spectrum : Canvas() {
