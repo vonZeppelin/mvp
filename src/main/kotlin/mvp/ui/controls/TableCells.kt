@@ -186,9 +186,15 @@ class TrackCell : GenericEditableTreeTableCell<Track, String>(null) {
     private companion object {
         val requiredFieldValidator = RequiredFieldValidator("Required field")
         val urlFieldValidator = object : ValidatorBase("Invalid URL") {
+            private val acceptedProtocols = setOf("http", "https")
+
             override fun eval() {
                 with(getSrcControl() as TextInputControl) {
-                    hasErrors.set(runCatching { URI(text) }.isFailure)
+                    hasErrors.set(
+                        runCatching { URI(text).scheme }
+                            .map { it.lowercase() !in acceptedProtocols }
+                            .getOrDefault(true)
+                    )
                 }
             }
         }

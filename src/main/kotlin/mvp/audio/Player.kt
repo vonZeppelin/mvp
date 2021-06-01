@@ -98,7 +98,7 @@ object Player {
             // OGG comments is a series of null-terminated UTF-8 strings
             val tags = toStringSequence(comments)
                 .mapNotNull { comment -> comment.split("=", limit = 2).takeIf { it.size == 2 } }
-                .associateBy({ it[0].toLowerCase(Locale.ENGLISH) }, { it[1] })
+                .associateBy({ it[0].lowercase() }, { it[1] })
             msg = listOfNotNull(tags["artist"], tags["title"]).joinToString(" - ")
         }
 

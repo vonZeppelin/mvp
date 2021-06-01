@@ -13,7 +13,7 @@
 }
 
 .track-table-cell HBox {
-    -fx-spacing: 5px;
+    -fx-spacing: 10px;
 }
 
 .track-table-editor {
