@@ -43,7 +43,7 @@ class StatusBar(eventListener: EventListener) {
 
                 itemButton.msgSend<Pointer>("setTarget:", self)
                 // action mask is (NSEventMaskLeftMouseDown | NSEventMaskRightMouseDown)
-                itemButton.msgSend<Pointer>("sendActionOn:", (1 shl 1) or (1 shl 3))
+                itemButton.msgSend<Pointer>("sendActionOn:", ((1 shl 1) or (1 shl 3)))
                 itemButton.msgSend<Pointer>("setAction:", "itemClicked:".nsSelector())
                 // hack: use <NSString* itemId> as button's tag
                 itemButton.msgSend<Pointer>("setTag:", itemId.msgSend<Pointer>("retain"))

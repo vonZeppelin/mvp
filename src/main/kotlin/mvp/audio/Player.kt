@@ -4,7 +4,6 @@ import com.jfoenix.utils.JFXUtilities.runInFXAndWait
 import com.sun.jna.Pointer
 import com.sun.jna.ptr.FloatByReference
 import java.nio.charset.Charset
-import java.util.Locale
 import java.util.Timer
 import javafx.application.Platform.runLater
 import javafx.beans.property.BooleanProperty
@@ -133,7 +132,7 @@ object Player {
                             "Couldn't create stream from $trackUrl, error code ${LibBASS.BASS_ErrorGetCode()}"
                         )
                         isCancelled -> {
-                            LibBASS.BASS_StreamFree(stream)
+                            LibBASS.BASS_ChannelFree(stream)
                             null
                         }
                         else -> {
@@ -145,7 +144,7 @@ object Player {
                             LibBASS.BASS_ChannelSetSync(stream, LibBASS.BASS_SYNC_STALL, 0, stallSync)
 
                             if (!LibBASS.BASS_ChannelPlay(stream, true)) {
-                                LibBASS.BASS_StreamFree(stream)
+                                LibBASS.BASS_ChannelFree(stream)
                                 error("Couldn't play stream, error code ${LibBASS.BASS_ErrorGetCode()}")
                             }
 
@@ -215,6 +214,7 @@ object Player {
     }
 
     init {
+        LibBASS.BASS_SetConfig(LibBASS.BASS_CONFIG_DEV_DEFAULT, 0)
         LibBASS.BASS_SetConfig(LibBASS.BASS_CONFIG_NET_PREBUF_WAIT, 0)
 
         volumeProperty.addListener { _, _, volume ->
@@ -237,7 +237,7 @@ object Player {
      */
     fun stop() {
         streamService.value
-            ?.let(LibBASS::BASS_StreamFree)
+            ?.let(LibBASS::BASS_ChannelFree)
             ?: streamService.cancel()
         LibBASS.BASS_Free()
         streamService.reset()

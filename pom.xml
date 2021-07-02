@@ -12,7 +12,7 @@
 
   <properties>
     <javafx.version>16</javafx.version>
-    <kotlin.version>1.5.10</kotlin.version>
+    <kotlin.version>1.5.20</kotlin.version>
 
     <mainClass>mvp.AppKt</mainClass>
 

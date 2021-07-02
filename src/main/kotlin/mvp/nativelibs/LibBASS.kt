@@ -39,6 +39,7 @@ class TagCACodec(ptr: Pointer) : Structure(ptr) {
 }
 
 object LibBASS {
+    @JvmStatic external fun BASS_ChannelFree(handle: Pointer): Boolean
     @JvmStatic external fun BASS_ChannelGetAttribute(handle: Pointer, attribute: Int, value: FloatByReference): Boolean
     @JvmStatic external fun BASS_ChannelGetData(handle: Pointer, buffer: FloatArray, length: Int): Int
     @JvmStatic external fun BASS_ChannelGetDevice(handle: Pointer): Int
@@ -56,7 +57,6 @@ object LibBASS {
     @JvmStatic external fun BASS_SetConfig(option: Int, value: Int): Boolean
     @JvmStatic external fun BASS_SetDevice(device: Int): Boolean
     @JvmStatic external fun BASS_StreamCreateURL(url: String, offset: Int, flags: Int, proc: Callback? = null, userData: Pointer = NULL_PTR): Pointer
-    @JvmStatic external fun BASS_StreamFree(stream: Pointer): Boolean
 
     const val BASS_CONFIG_DEV_DEFAULT = 36
     const val BASS_CONFIG_NET_PREBUF_WAIT = 60
