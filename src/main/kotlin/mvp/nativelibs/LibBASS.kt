@@ -58,11 +58,14 @@ object LibBASS {
     @JvmStatic external fun BASS_SetDevice(device: Int): Boolean
     @JvmStatic external fun BASS_StreamCreateURL(url: String, offset: Int, flags: Int, proc: Callback? = null, userData: Pointer = NULL_PTR): Pointer
 
+    const val BASS_CONFIG_NET_PLAYLIST = 21
     const val BASS_CONFIG_DEV_DEFAULT = 36
     const val BASS_CONFIG_NET_PREBUF_WAIT = 60
 
     const val BASS_DEVICE_ENABLED = 1
     const val BASS_DEVICE_DEFAULT = 2
+
+    const val BASS_SAMPLE_FLOAT = 256
 
     const val BASS_STREAM_AUTOFREE = 0x40000
     const val BASS_STREAM_BLOCK = 0x100000

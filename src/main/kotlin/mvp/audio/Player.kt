@@ -124,7 +124,7 @@ object Player {
                     val stream = LibBASS.BASS_StreamCreateURL(
                         trackUrl.toASCIIString(),
                         0,
-                        LibBASS.BASS_STREAM_BLOCK or LibBASS.BASS_STREAM_STATUS or LibBASS.BASS_STREAM_AUTOFREE
+                        LibBASS.BASS_STREAM_BLOCK or LibBASS.BASS_STREAM_STATUS or LibBASS.BASS_STREAM_AUTOFREE or LibBASS.BASS_SAMPLE_FLOAT
                     )
 
                     return when {
@@ -214,6 +214,7 @@ object Player {
     }
 
     init {
+        LibBASS.BASS_SetConfig(LibBASS.BASS_CONFIG_NET_PLAYLIST, 1)
         LibBASS.BASS_SetConfig(LibBASS.BASS_CONFIG_DEV_DEFAULT, 0)
         LibBASS.BASS_SetConfig(LibBASS.BASS_CONFIG_NET_PREBUF_WAIT, 0)
 
