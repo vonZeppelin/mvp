@@ -1,0 +1,34 @@
+{
+  "resources":[
+    {"pattern":"\\Qcom/jfoenix/assets/css/controls/jfx-alert.css\\E"},
+    {"pattern":"\\Qcom/jfoenix/assets/css/controls/jfx-dialog-layout.css\\E"},
+    {"pattern":"\\Qcom/sun/glass/utils/NativeLibLoader.class\\E"},
+    {"pattern":"\\Qcom/sun/jna/darwin/libjnidispatch.jnilib\\E"},
+    {"pattern":"\\Qcom/sun/prism/es2/glsl/DrawCircle_Color.frag\\E"},
+    {"pattern":"\\Qcom/sun/prism/es2/glsl/FillCircle_Color.frag\\E"},
+    {"pattern":"\\Qcom/sun/prism/es2/glsl/FillPgram_Color.frag\\E"},
+    {"pattern":"\\Qcom/sun/prism/es2/glsl/FillPgram_LinearGradient_PAD.frag\\E"},
+    {"pattern":"\\Qcom/sun/prism/es2/glsl/Solid_Color.frag\\E"},
+    {"pattern":"\\Qcom/sun/prism/es2/glsl/Solid_TextureFirstPassLCD.frag\\E"},
+    {"pattern":"\\Qcom/sun/prism/es2/glsl/Solid_TextureRGB.frag\\E"},
+    {"pattern":"\\Qcom/sun/prism/es2/glsl/Solid_TextureSecondPassLCD.frag\\E"},
+    {"pattern":"\\Qcom/sun/prism/es2/glsl/Texture_Color.frag\\E"},
+    {"pattern":"\\Qcom/sun/prism/es2/glsl/Texture_LinearGradient_PAD.frag\\E"},
+    {"pattern":"\\Qcom/sun/scenario/effect/impl/es2/glsl/Blend_SRC_IN.frag\\E"},
+    {"pattern":"\\Qcom/sun/scenario/effect/impl/es2/glsl/LinearConvolveShadow_64.frag\\E"},
+    {"pattern":"\\Qcom/sun/scenario/effect/impl/es2/glsl/LinearConvolveShadow_8.frag\\E"},
+    {"pattern":"\\Qdarwin/libbass.dylib\\E"},
+    {"pattern":"\\Qdarwin/libuiohook.dylib\\E"},
+    {"pattern":"\\Qdelete.png\\E"},
+    {"pattern":"\\Qlibglass.dylib\\E"},
+    {"pattern":"\\Qlibprism_es2.dylib\\E"},
+    {"pattern":"\\Qloading.png\\E"},
+    {"pattern":"\\Qplay.png\\E"},
+    {"pattern":"\\Qstop.png\\E"},
+    {"pattern":"\\Qui.fxml\\E"}
+  ],
+  "bundles":[
+    {"name":"com.sun.javafx.tk.quantum.QuantumMessagesBundle"},
+    {"name":"com/sun/javafx/scene/control/skin/resources/controls"}
+  ]
+}

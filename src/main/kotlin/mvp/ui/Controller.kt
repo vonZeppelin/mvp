@@ -39,6 +39,7 @@ import mvp.ui.controls.AboutDialog
 import mvp.ui.controls.StatusBar
 import mvp.ui.controls.StatusCellFactory
 import mvp.ui.controls.TrackCell
+import kotlin.system.exitProcess
 
 const val ARROW_HEIGHT = 10.0
 @JvmField val ROOT_PADDING: Insets = Insets(ARROW_HEIGHT * 2, ARROW_HEIGHT, ARROW_HEIGHT, ARROW_HEIGHT)
@@ -80,7 +81,8 @@ class Controller(private val stage: Stage) {
         Player.destroy()
         statusBar.destroy()
         writeM3U(playlist.root.children.map { it.value }, mvpPlaylist)
-        Platform.exit()
+        // Platform.exit()
+        exitProcess(0)
     }
 
     @FXML fun openPlaylist() {

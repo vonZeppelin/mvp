@@ -179,6 +179,7 @@ class TrackCell : GenericEditableTreeTableCell<Track, String>(null) {
                     .then(ContentDisplay.GRAPHIC_ONLY)
                     .otherwise(ContentDisplay.TEXT_ONLY)
             )
+            // textOverrun =
             prefWidth = Double.POSITIVE_INFINITY
         }
     }

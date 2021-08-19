@@ -1,5 +1,6 @@
 package mvp.nativelibs
 
+import com.sun.jna.Callback
 import com.sun.jna.FunctionMapper
 import com.sun.jna.NativeLibrary
 import com.sun.jna.Platform
@@ -40,4 +41,24 @@ fun loadLibraries(vararg libraries: String, block: (String, Path) -> Unit) {
         .forEach(Files::delete)
     // delete the temp dir as it's empty by now
     Files.delete(tempDir)
+}
+
+fun interface Callback0<R> : Callback {
+    fun callback(): R
+}
+
+fun interface Callback1<V, R> : Callback {
+    fun callback(arg: V): R
+}
+
+fun interface Callback2<V1, V2, R> : Callback {
+    fun callback(arg1: V1, arg2: V2): R
+}
+
+fun interface Callback3<V1, V2, V3, R> : Callback {
+    fun callback(arg1: V1, arg2: V2, arg3: V3): R
+}
+
+fun interface Callback4<V1, V2, V3, V4, R> : Callback {
+    fun callback(arg1: V1, arg2: V2, arg3: V3, arg4: V4): R
 }
