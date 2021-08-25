@@ -10,4 +10,5 @@ module mvp {
     opens mvp to javafx.graphics;
     opens mvp.nativelibs to com.sun.jna;
     opens mvp.ui to javafx.fxml, com.sun.jna;
+    opens mvp.ui.controls to javafx.fxml, com.sun.jna;
 }
