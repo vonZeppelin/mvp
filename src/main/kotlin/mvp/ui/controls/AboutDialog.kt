@@ -6,10 +6,13 @@ import com.jfoenix.controls.JFXButton
 import com.jfoenix.controls.JFXDialogLayout
 import javafx.scene.control.Label
 import javafx.scene.text.Text
+import mvp.jfoenixStylesheets
 
 class AboutDialog : JFXAlert<Unit>() {
     init {
         animation = JFXAlertAnimation.NO_ANIMATION
+        dialogPane.stylesheets += jfoenixStylesheets
+
         setContent(
             JFXDialogLayout().apply {
                 setActions(
@@ -24,4 +27,8 @@ class AboutDialog : JFXAlert<Unit>() {
     }
 }
 
-private const val ABOUT_APP = "Minimal Viable Player - lives in the taskbar and plays streaming audio.\n\n\u00a9 2021, Leonid Bogdanov"
+private val ABOUT_APP = """
+    Minimal Viable Player - lives in the taskbar and plays streaming audio.
+    
+    2020-2021, Leonid Bogdanov
+""".trimIndent()

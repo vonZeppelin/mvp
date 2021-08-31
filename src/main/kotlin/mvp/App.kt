@@ -1,5 +1,6 @@
 package mvp
 
+import com.jfoenix.assets.JFoenixResources
 import javafx.application.Application
 import javafx.application.Platform
 import javafx.fxml.FXMLLoader
@@ -12,6 +13,11 @@ import javafx.util.Callback
 import mvp.ui.ARROW_HEIGHT
 import mvp.ui.Controller
 
+val jfoenixStylesheets: List<String> = listOf(
+    JFoenixResources.load("css/jfoenix-fonts.css").toExternalForm(),
+    JFoenixResources.load("css/jfoenix-design.css").toExternalForm()
+)
+
 class App : Application() {
     private lateinit var uiHooks: UIHooks
 
@@ -19,7 +25,9 @@ class App : Application() {
         with(primaryStage) {
             initStyle(StageStyle.TRANSPARENT)
             val (root, controller) = "/ui.fxml".loadFXML<Parent, Controller>(this)
-            scene = Scene(root, SCENE_WIDTH, SCENE_HEIGHT, Color.TRANSPARENT)
+            scene = Scene(root, SCENE_WIDTH, SCENE_HEIGHT, Color.TRANSPARENT).apply {
+                stylesheets += jfoenixStylesheets
+            }
             uiHooks = UIHooks(this, controller)
         }
     }
