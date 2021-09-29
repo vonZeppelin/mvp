@@ -11,8 +11,8 @@
   <name>MVP</name>
 
   <properties>
-    <javafx.version>16</javafx.version>
-    <kotlin.version>1.5.30</kotlin.version>
+    <javafx.version>17.0.0.1</javafx.version>
+    <kotlin.version>1.5.31</kotlin.version>
 
     <mainClass>mvp.AppKt</mainClass>
 
@@ -99,7 +99,7 @@
       <plugin>
         <groupId>org.openjfx</groupId>
         <artifactId>javafx-maven-plugin</artifactId>
-        <version>0.0.6</version>
+        <version>0.0.7</version>
         <executions>
           <execution>
             <phase>package</phase>

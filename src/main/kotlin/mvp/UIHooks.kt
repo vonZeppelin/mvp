@@ -29,14 +29,14 @@ class UIHooks(private val stage: Stage, private val controller: Controller) {
     }
 
     init {
-        thread(isDaemon = true) {
-            LibUIOHook.hook_set_dispatch_proc(uiHookDispatch)
-            LibUIOHook.hook_run()
-        }
+//        thread(isDaemon = true) {
+//            LibUIOHook.hook_set_dispatch_proc(uiHookDispatch)
+//            LibUIOHook.hook_run()
+//        }
     }
 
     fun dispose() {
-        LibUIOHook.hook_stop()
+        //LibUIOHook.hook_stop()
         debounceScheduler.shutdownNow()
     }
 
