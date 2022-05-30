@@ -11,10 +11,10 @@
   <name>MVP</name>
 
   <properties>
-    <javafx.version>16</javafx.version>
-    <kotlin.version>1.5.30</kotlin.version>
+    <javafx.version>18</javafx.version>
+    <kotlin.version>1.6.20</kotlin.version>
 
-    <mainClass>mvp.AppKt</mainClass>
+    <mainClass>mvp/mvp.AppKt</mainClass>
 
     <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
     <maven.compiler.release>11</maven.compiler.release>
@@ -30,7 +30,7 @@
     <dependency>
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna-jpms</artifactId>
-      <version>5.9.0</version>
+      <version>5.11.0</version>
     </dependency>
     <dependency>
       <groupId>org.jetbrains.kotlin</groupId>
@@ -75,9 +75,10 @@
           </sourceDirs>
         </configuration>
       </plugin>
+
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.8.1</version>
+        <version>3.10.1</version>
         <executions>
           <execution>
             <id>default-compile</id>
@@ -96,10 +97,45 @@
           </execution>
         </executions>
       </plugin>
+
+<!--      <plugin>-->
+<!--        <groupId>org.apache.maven.plugins</groupId>-->
+<!--        <artifactId>maven-jlink-plugin</artifactId>-->
+<!--        <version>3.1.0</version>-->
+
+<!--        <executions>-->
+<!--          <execution>-->
+<!--            <phase>package</phase>-->
+<!--            <goals>-->
+<!--              <goal>jlink</goal>-->
+<!--            </goals>-->
+<!--          </execution>-->
+<!--        </executions>-->
+<!--      </plugin>-->
+
+<!--      <plugin>-->
+<!--        <groupId>org.panteleyev</groupId>-->
+<!--        <artifactId>jpackage-maven-plugin</artifactId>-->
+<!--        <version>1.5.1</version>-->
+<!--        <configuration>-->
+<!--          <name>MVP</name>-->
+<!--&lt;!&ndash;          <runtimeImage>${java.home}</runtimeImage>&ndash;&gt;-->
+<!--&lt;!&ndash;          <module>${appModule}/${appMainClass}</module>&ndash;&gt;-->
+<!--&lt;!&ndash;          <modulePaths>&ndash;&gt;-->
+<!--&lt;!&ndash;            <modulePath>target/mods</modulePath>&ndash;&gt;-->
+<!--&lt;!&ndash;          </modulePaths>&ndash;&gt;-->
+<!--          <destination>target/dist</destination>-->
+<!--&lt;!&ndash;          <javaOptions>&ndash;&gt;-->
+<!--&lt;!&ndash;            <option>&#45;&#45;enable-preview</option>&ndash;&gt;-->
+<!--&lt;!&ndash;            <option>-Dfile.encoding=UTF-8</option>&ndash;&gt;-->
+<!--&lt;!&ndash;          </javaOptions>&ndash;&gt;-->
+<!--        </configuration>-->
+<!--      </plugin>-->
+
       <plugin>
         <groupId>org.openjfx</groupId>
         <artifactId>javafx-maven-plugin</artifactId>
-        <version>0.0.6</version>
+        <version>0.0.8</version>
         <executions>
           <execution>
             <phase>package</phase>
@@ -124,6 +160,32 @@
           </options>
         </configuration>
       </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>3.0.0</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <mainClass>${mainClass}</mainClass>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>17</source>
+          <target>17</target>
+        </configuration>
+      </plugin>
+
     </plugins>
   </build>
 
