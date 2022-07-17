@@ -12,12 +12,12 @@
 
   <properties>
     <javafx.version>16</javafx.version>
-    <kotlin.version>1.5.30</kotlin.version>
+    <kotlin.version>1.7.10</kotlin.version>
 
     <mainClass>mvp.AppKt</mainClass>
 
     <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
-    <maven.compiler.release>11</maven.compiler.release>
+    <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
