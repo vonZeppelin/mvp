@@ -84,7 +84,7 @@ class TrackCell : GenericEditableTreeTableCell<Track, String>(null) {
         }
 
         override fun setValue(value: Any) {
-            with(treeTableRow.item) {
+            with(tableRow.item) {
                 nameField?.text = name
                 urlField?.text = url.toASCIIString()
             }
@@ -94,7 +94,7 @@ class TrackCell : GenericEditableTreeTableCell<Track, String>(null) {
             if (listOfNotNull(nameField, urlField).all(JFXTextField::validate)) {
                 // track's name and URL are updated after a successful validation
                 // as a workaround to edit multiple values via EditorNodeBuilder
-                with(treeTableRow.item) {
+                with(tableRow.item) {
                     name = nameField!!.text
                     url = URI(urlField!!.text)
                 }
@@ -138,7 +138,7 @@ class TrackCell : GenericEditableTreeTableCell<Track, String>(null) {
         val controlsPanel = HBox(
             // play/stop button
             JFXButton().apply {
-                val track = treeTableRow.item
+                val track = tableRow.item
                 val isPlayingThisTrack = Player.trackProperty.isEqualTo(track).and(Player.statusProperty.isEqualTo(Status.PLAYING))
                 graphicProperty().bind(
                     whenever(isPlayingThisTrack)
@@ -158,7 +158,7 @@ class TrackCell : GenericEditableTreeTableCell<Track, String>(null) {
                     // workaround for annoying default behaviour of editable (Tree)TableView:
                     // enable its editing on button click (edit start) and disable on edit cancel/commit
                     treeTableView.isEditable = true
-                    treeTableView.edit(treeTableRow.index, tableColumn)
+                    treeTableView.edit(tableRow.index, tableColumn)
                 }
             },
             // horizontal glue
@@ -166,7 +166,7 @@ class TrackCell : GenericEditableTreeTableCell<Track, String>(null) {
             // delete button
             JFXButton("Delete", loadImage("delete")).apply {
                 setOnAction {
-                    treeTableView.root.children -= treeTableRow.treeItem
+                    treeTableView.root.children -= tableRow.treeItem
                     treeTableView.selectionModel.clearSelection()
                     treeTableView.refresh()
                 }
@@ -175,7 +175,7 @@ class TrackCell : GenericEditableTreeTableCell<Track, String>(null) {
 
         return Label(item, controlsPanel).apply {
             contentDisplayProperty().bind(
-                whenever(treeTableRow.selectedProperty())
+                whenever(tableRow.selectedProperty())
                     .then(ContentDisplay.GRAPHIC_ONLY)
                     .otherwise(ContentDisplay.TEXT_ONLY)
             )
