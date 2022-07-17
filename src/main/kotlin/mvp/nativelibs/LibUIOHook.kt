@@ -21,7 +21,7 @@ const val VC_MEDIA_NEXT = 0xE019.toShort()
 const val VC_MEDIA_PLAY = 0xE022.toShort()
 
 class EventData : Union() {
-    @Structure.FieldOrder("button", "clicks", "x", "y")
+    @FieldOrder("button", "clicks", "x", "y")
     class MouseEventData : Structure() {
         @JvmField var button: Short = 0
         @JvmField var clicks: Short = 0
@@ -29,7 +29,7 @@ class EventData : Union() {
         @JvmField var y: Short = 0
     }
 
-    @Structure.FieldOrder("keycode", "rawcode", "keychar")
+    @FieldOrder("keycode", "rawcode", "keychar")
     class KeyboardEventData : Structure() {
         @JvmField var keycode: Short = 0
         @JvmField var rawcode: Short = 0
