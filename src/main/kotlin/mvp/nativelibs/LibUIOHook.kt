@@ -62,7 +62,7 @@ class UIOHookEvent : Structure() {
 }
 
 fun interface LoggerProc : Callback {
-    fun callback(level: Int, message: String, args: Pointer): Boolean
+    fun callback(level: Int, message: String, args: Pointer?): Boolean
 }
 
 fun interface DispatchProc : Callback {

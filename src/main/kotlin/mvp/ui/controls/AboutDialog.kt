@@ -30,5 +30,5 @@ class AboutDialog : JFXAlert<Unit>() {
 private val ABOUT_APP = """
     Minimal Viable Player - lives in the taskbar and plays streaming audio.
     
-    2020-2021, Leonid Bogdanov
+    2020-2022, Leonid Bogdanov
 """.trimIndent()

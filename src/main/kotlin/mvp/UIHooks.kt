@@ -23,7 +23,7 @@ import mvp.ui.Controller
 class UIHooks(private val stage: Stage, private val controller: Controller) {
     private val uiHookDispatch: DispatchProc = DispatchProc { event ->
         when (event.eventType) {
-            EVENT_MOUSE_PRESSED -> maybeHideStage(event.data.mouse)
+            EVENT_MOUSE_PRESSED -> if (controller.isAutohideEnabled) maybeHideStage(event.data.mouse)
             EVENT_KEY_RELEASED -> handleMediaKeys(event.data.keyboard)
         }
     }

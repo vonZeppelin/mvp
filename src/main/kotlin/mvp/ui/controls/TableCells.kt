@@ -150,7 +150,13 @@ class TrackCell : GenericEditableTreeTableCell<Track, String>(null) {
                         .then("Stop")
                         .otherwise("Play")
                 )
-                setOnAction { if (isPlayingThisTrack.value) Player.stop() else Player.play(track) }
+                setOnAction {
+                    if (isPlayingThisTrack.value)
+                        Player.stop()
+                    else
+                        Player.play(track)
+                    treeTableView.selectionModel.clearSelection()
+                }
             },
             // edit button
             JFXButton("Edit", loadImage("edit")).apply {

@@ -14,7 +14,7 @@
     <javafx.version>18.0.1</javafx.version>
     <kotlin.version>1.7.10</kotlin.version>
 
-    <mainClass>mvp.AppKt</mainClass>
+    <mainClass>mvp/mvp.AppKt</mainClass>
 
     <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
     <maven.compiler.release>17</maven.compiler.release>

@@ -1,6 +1,7 @@
 module mvp {
     requires com.jfoenix;
     requires com.sun.jna;
+    requires java.desktop;
     requires java.prefs;
     requires javafx.controls;
     requires javafx.fxml;

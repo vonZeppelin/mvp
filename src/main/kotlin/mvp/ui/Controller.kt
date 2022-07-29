@@ -1,14 +1,11 @@
 package mvp.ui
 
-import com.sun.jna.Pointer
-import java.io.InputStream
 import java.nio.file.Paths
 import javafx.application.Platform
 import javafx.beans.binding.Bindings.`when` as whenever
 import javafx.event.ActionEvent
 import javafx.fxml.FXML
 import javafx.geometry.Insets
-import javafx.geometry.Point2D
 import javafx.geometry.Side
 import javafx.scene.Node
 import javafx.scene.control.CheckMenuItem
@@ -32,40 +29,31 @@ import mvp.audio.Player.Status
 import mvp.audio.Track
 import mvp.audio.readM3U
 import mvp.audio.writeM3U
-import mvp.nativelibs.NSApp
-import mvp.nativelibs.javaString
-import mvp.nativelibs.msgSend
 import mvp.ui.controls.AboutDialog
-import mvp.ui.controls.StatusBar
 import mvp.ui.controls.StatusCellFactory
 import mvp.ui.controls.TrackCell
+import java.awt.Image
+import java.awt.SystemTray
+import java.awt.TrayIcon
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
+import javax.imageio.ImageIO
+import javax.swing.SwingUtilities
+import kotlin.system.exitProcess
 
 const val ARROW_HEIGHT = 10.0
 @JvmField val ROOT_PADDING: Insets = Insets(ARROW_HEIGHT * 2, ARROW_HEIGHT, ARROW_HEIGHT, ARROW_HEIGHT)
 
 class Controller(private val stage: Stage) {
     @FXML private lateinit var appMenu: ContextMenu
+    @FXML private lateinit var autohide: CheckMenuItem
     @FXML private lateinit var instaPause: CheckMenuItem
-    @FXML private lateinit var showAuxIcons: CheckMenuItem
     @FXML private lateinit var volume: Slider
     @FXML private lateinit var playlist: TreeTableView<Track>
     @FXML private lateinit var statusCol: TreeTableColumn<Track, out Node>
     @FXML private lateinit var trackCol: TreeTableColumn<Track, String>
 
-    private val statusBar: StatusBar = StatusBar { (id, location, isRightButton) ->
-        when {
-            isRightButton -> if (stage.isShowing) stage.hide() else showUI(location)
-            id == PLAY_ICON_ID -> toggleTrack()
-            id == PREVIOUS_ICON_ID -> playNextTrack(reverse = true)
-            id == NEXT_ICON_ID -> playNextTrack()
-        }
-    }
-    private val isDarkTheme: Boolean by lazy {
-        NSApp.msgSend<Pointer>("effectiveAppearance")
-            .msgSend<Pointer>("name")
-            .javaString()
-            .contains("dark", ignoreCase = true)
-    }
+    private lateinit var trayIcon: TrayIcon
 
     @FXML fun aboutApp() {
         AboutDialog().showAndWait()
@@ -78,9 +66,8 @@ class Controller(private val stage: Stage) {
 
     @FXML fun exitApp() {
         Player.destroy()
-        statusBar.destroy()
         writeM3U(playlist.root.children.map { it.value }, mvpPlaylist)
-        Platform.exit()
+        exitProcess(0)
     }
 
     @FXML fun openPlaylist() {
@@ -120,13 +107,10 @@ class Controller(private val stage: Stage) {
             Player.instaPauseProperty.bind(this)
             Settings.bind(this, "instapause", true)
         }
-        with(showAuxIcons.selectedProperty()) {
-            Settings.bind(this, "showauxicons", false)
-            addListener { _, _, newValue ->
-                hideTrayIcons()
-                showTrayIcons(newValue)
-            }
+        with(autohide.selectedProperty()) {
+            Settings.bind(this, "autohide", true)
         }
+
         with(volume.valueProperty()) {
             Player.volumeProperty.bind(this)
             Settings.bind(this, "volume", 100.0)
@@ -138,16 +122,38 @@ class Controller(private val stage: Stage) {
                 Status.ERROR, Status.STANDBY -> "play"
                 else -> return@addListener
             }
-            statusBar.updateIcon(PLAY_ICON_ID, loadIcon(newIcon))
+            SwingUtilities.invokeLater { trayIcon.image = loadIcon(newIcon) }
+        }
+        Player.statusMessageProperty.addListener { _, _, newValue ->
+            SwingUtilities.invokeLater { trayIcon.toolTip = newValue }
         }
 
-        showTrayIcons(showAuxIcons.isSelected)
+        SwingUtilities.invokeAndWait {
+            trayIcon = TrayIcon(loadIcon("play"))
+            trayIcon.addMouseListener(object : MouseAdapter() {
+                override fun mousePressed(e: MouseEvent) {
+                    Platform.runLater {
+                        when {
+                            SwingUtilities.isRightMouseButton(e) ->
+                                if (stage.isShowing) stage.hide() else showUI(e.x.toDouble(), e.y.toDouble())
+                            else -> toggleTrack()
+                        }
+                    }
+                }
+            })
+        }
+        SystemTray.getSystemTray().add(trayIcon)
     }
+
+    val isAutohideEnabled: Boolean
+        get() = autohide.isSelected
 
     fun toggleTrack() {
         when (Player.status) {
             Status.LOADING, Status.PLAYING -> Player.stop()
-            else -> (playlist.selectionModel.selectedItem ?: playlist.root.children.firstOrNull())?.let { Player.play(it.value) }
+            else ->
+                (playlist.selectionModel.selectedItem ?: playlist.root.children.firstOrNull())
+                    ?.let { Player.play(it.value) }
         }
     }
 
@@ -160,32 +166,15 @@ class Controller(private val stage: Stage) {
             ?.run { Player.play(value) }
     }
 
-    private fun showTrayIcons(showAuxIcons: Boolean) {
-        if (showAuxIcons) {
-            statusBar.addIcon(NEXT_ICON_ID, loadIcon("next"))
-        }
-        statusBar.addIcon(
-            PLAY_ICON_ID,
-            loadIcon(if (Player.status == Status.PLAYING) "stop" else "play")
-        )
-        if (showAuxIcons) {
-            statusBar.addIcon(PREVIOUS_ICON_ID, loadIcon("previous"))
-        }
-    }
-
-    private fun hideTrayIcons() {
-        listOf(PREVIOUS_ICON_ID, PLAY_ICON_ID, NEXT_ICON_ID).forEach(statusBar::removeIcon)
-    }
-
     // TODO Proper positioning, East-West support?
-    private fun showUI(click: Point2D) {
+    private fun showUI(x: Double, y: Double) {
         val scene = if (stage.isShowing) return else stage.scene
 
-        val screenBounds = Screen.getScreensForRectangle(click.x, click.y, 1.0, 1.0)
+        val screenBounds = Screen.getScreensForRectangle(x, y, 1.0, 1.0)
             .single()
             .visualBounds
-        val arrowheadX = click.x.coerceIn(screenBounds.minX, screenBounds.maxX)
-        val arrowheadY = click.y.coerceIn(screenBounds.minY, screenBounds.maxY)
+        val arrowheadX = x.coerceIn(screenBounds.minX, screenBounds.maxX)
+        val arrowheadY = y.coerceIn(screenBounds.minY, screenBounds.maxY)
 
         stage.x = arrowheadX - scene.width / 2
         stage.y = arrowheadY
@@ -207,10 +196,7 @@ class Controller(private val stage: Stage) {
     }
 }
 
-private fun loadIcon(icon: String): ByteArray =
-    Controller::class.java.getResourceAsStream("/images/$icon.png").use(InputStream::readBytes)
+private fun loadIcon(icon: String): Image =
+    Controller::class.java.getResourceAsStream("/images/$icon.png").use(ImageIO::read)
 
-private const val NEXT_ICON_ID = "next"
-private const val PLAY_ICON_ID = "play/stop"
-private const val PREVIOUS_ICON_ID = "previous"
 private val mvpPlaylist = Paths.get(System.getProperty("user.home"), "mvp.m3u8").toFile()

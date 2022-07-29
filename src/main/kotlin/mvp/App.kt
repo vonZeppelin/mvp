@@ -24,6 +24,8 @@ class App : Application() {
     override fun start(primaryStage: Stage) {
         with(primaryStage) {
             initStyle(StageStyle.TRANSPARENT)
+            isAlwaysOnTop = true
+
             val (root, controller) = "/ui.fxml".loadFXML<Parent, Controller>(this)
             scene = Scene(root, SCENE_WIDTH, SCENE_HEIGHT, Color.TRANSPARENT).apply {
                 stylesheets += jfoenixStylesheets
@@ -38,6 +40,9 @@ class App : Application() {
 }
 
 fun main(args: Array<String>) {
+    System.setProperty("apple.awt.enableTemplateImages", "true")
+    System.setProperty("prism.lcdtext", "false")
+
     Platform.setImplicitExit(false)
     Application.launch(App::class.java, *args)
 }
