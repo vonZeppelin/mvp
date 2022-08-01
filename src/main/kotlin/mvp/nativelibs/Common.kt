@@ -1,6 +1,5 @@
 package mvp.nativelibs
 
-import com.sun.jna.FunctionMapper
 import com.sun.jna.NativeLibrary
 import com.sun.jna.Platform
 import com.sun.jna.Pointer
@@ -9,14 +8,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 val NULL_PTR: Pointer = Pointer.createConstant(0L)
-
-@Target(AnnotationTarget.FUNCTION)
-@Retention(AnnotationRetention.RUNTIME)
-annotation class Fn(val name: String)
-
-val FN_FUNCTION_MAPPER = FunctionMapper { _, method ->
-    method.getAnnotation(Fn::class.java)?.name ?: method.name
-}
 
 fun loadLibraries(vararg libraries: String, block: (String, Path) -> Unit) {
     val tempDir = Files.createTempDirectory("mvp")

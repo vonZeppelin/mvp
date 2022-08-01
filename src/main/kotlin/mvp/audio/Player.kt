@@ -98,7 +98,7 @@ object Player {
             val tags = toStringSequence(comments)
                 .mapNotNull { comment -> comment.split("=", limit = 2).takeIf { it.size == 2 } }
                 .associateBy({ it[0].lowercase() }, { it[1] })
-            msg = listOfNotNull(tags["artist"], tags["title"]).joinToString(" - ")
+            msg = listOfNotNull(tags["artist"], tags["title"]).joinToString(" – ")
         }
 
         runLater { _statusMessageProperty.set(msg) }

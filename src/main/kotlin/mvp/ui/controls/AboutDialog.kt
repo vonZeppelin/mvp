@@ -6,12 +6,12 @@ import com.jfoenix.controls.JFXButton
 import com.jfoenix.controls.JFXDialogLayout
 import javafx.scene.control.Label
 import javafx.scene.text.Text
-import mvp.jfoenixStylesheets
+import mvp.cssStyles
 
 class AboutDialog : JFXAlert<Unit>() {
     init {
         animation = JFXAlertAnimation.NO_ANIMATION
-        dialogPane.stylesheets += jfoenixStylesheets
+        dialogPane.stylesheets += cssStyles
 
         setContent(
             JFXDialogLayout().apply {

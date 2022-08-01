@@ -1,6 +1,5 @@
 package mvp.ui
 
-import java.nio.file.Paths
 import javafx.application.Platform
 import javafx.beans.binding.Bindings.`when` as whenever
 import javafx.event.ActionEvent
@@ -16,12 +15,8 @@ import javafx.scene.control.TreeTableColumn
 import javafx.scene.control.TreeTableView
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
-import javafx.scene.layout.Region
-import javafx.scene.shape.Polygon
-import javafx.scene.shape.Rectangle
-import javafx.scene.shape.Shape
 import javafx.stage.FileChooser
-import javafx.stage.Screen
+import javafx.stage.Screen.getScreensForRectangle
 import javafx.stage.Stage
 import javafx.util.Callback
 import mvp.audio.Player
@@ -37,9 +32,9 @@ import java.awt.SystemTray
 import java.awt.TrayIcon
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import java.io.File
 import javax.imageio.ImageIO
 import javax.swing.SwingUtilities
-import kotlin.system.exitProcess
 
 const val ARROW_HEIGHT = 10.0
 @JvmField val ROOT_PADDING: Insets = Insets(ARROW_HEIGHT * 2, ARROW_HEIGHT, ARROW_HEIGHT, ARROW_HEIGHT)
@@ -67,7 +62,7 @@ class Controller(private val stage: Stage) {
     @FXML fun exitApp() {
         Player.destroy()
         writeM3U(playlist.root.children.map { it.value }, mvpPlaylist)
-        exitProcess(0)
+        Platform.exit()
     }
 
     @FXML fun openPlaylist() {
@@ -134,8 +129,7 @@ class Controller(private val stage: Stage) {
                 override fun mousePressed(e: MouseEvent) {
                     Platform.runLater {
                         when {
-                            SwingUtilities.isRightMouseButton(e) ->
-                                if (stage.isShowing) stage.hide() else showUI(e.x.toDouble(), e.y.toDouble())
+                            SwingUtilities.isRightMouseButton(e) -> showOrMoveUI(e.x.toDouble(), e.y.toDouble())
                             else -> toggleTrack()
                         }
                     }
@@ -167,29 +161,24 @@ class Controller(private val stage: Stage) {
     }
 
     // TODO Proper positioning, East-West support?
-    private fun showUI(x: Double, y: Double) {
-        val scene = if (stage.isShowing) return else stage.scene
+    private fun showOrMoveUI(x: Double, y: Double) {
+        val screenOfClick = getScreensForRectangle(x, y, 1.0, 1.0).single()
 
-        val screenBounds = Screen.getScreensForRectangle(x, y, 1.0, 1.0)
-            .single()
-            .visualBounds
+        if (stage.isShowing) {
+            val screenOfStage = getScreensForRectangle(stage.x, stage.y, stage.width, stage.height).single()
+
+            if (screenOfClick == screenOfStage) {
+                stage.hide()
+                return
+            }
+        }
+
+        val screenBounds = screenOfClick.visualBounds
         val arrowheadX = x.coerceIn(screenBounds.minX, screenBounds.maxX)
         val arrowheadY = y.coerceIn(screenBounds.minY, screenBounds.maxY)
 
-        stage.x = arrowheadX - scene.width / 2
+        stage.x = arrowheadX - stage.scene.width / 2
         stage.y = arrowheadY
-
-        (scene.root as Region).shape = Shape.union(
-            Rectangle(ARROW_HEIGHT, ARROW_HEIGHT, scene.width - ARROW_HEIGHT * 2, scene.height - ARROW_HEIGHT * 2).apply {
-                arcWidth = 10.0
-                arcHeight = 10.0
-            },
-            Polygon(
-                scene.width / 2 - ARROW_HEIGHT, ARROW_HEIGHT,
-                scene.width / 2, 0.0,
-                scene.width / 2 + ARROW_HEIGHT, ARROW_HEIGHT
-            )
-        )
 
         stage.show()
         stage.toFront()
@@ -199,4 +188,4 @@ class Controller(private val stage: Stage) {
 private fun loadIcon(icon: String): Image =
     Controller::class.java.getResourceAsStream("/images/$icon.png").use(ImageIO::read)
 
-private val mvpPlaylist = Paths.get(System.getProperty("user.home"), "mvp.m3u8").toFile()
+private val mvpPlaylist = File(System.getProperty("user.home"), "mvp.m3u8")
