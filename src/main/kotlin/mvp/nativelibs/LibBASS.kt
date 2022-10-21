@@ -100,7 +100,7 @@ object LibBASS {
             if (name == "bass") {
                 Native.register(name)
             } else {
-                check(BASS_PluginLoad(path.toString(), 1) != 0) {
+                check(BASS_PluginLoad(path.toString(), 0) != 0) {
                     "Couldn't load '$name' plugin from file '$path', error code ${BASS_ErrorGetCode()}"
                 }
             }
